@@ -94,6 +94,15 @@
       authError.hidden = false;
     }
 
+    async function apiErrorMessage(response, fallback) {
+      try {
+        const data = await response.json();
+        return data.message || fallback;
+      } catch {
+        return fallback;
+      }
+    }
+
     function updateAuthState(session) {
       currentSession = session;
       loginForm.hidden = Boolean(session);
@@ -130,7 +139,9 @@
           headers: { Authorization: `Bearer ${token}` },
           cache: 'no-store',
         });
-        if (!response.ok) throw new Error('자료를 불러올 수 없습니다.');
+        if (!response.ok) {
+          throw new Error(await apiErrorMessage(response, '자료를 불러올 수 없습니다.'));
+        }
         const data = await response.json();
         if (!Array.isArray(data)
             || data.some(note => typeof note.id !== 'string'
@@ -177,7 +188,9 @@
                 headers: { Authorization: `****** },
                 cache: 'no-store',
               });
-              if (!deleteResponse.ok) throw new Error('메모를 삭제하지 못했습니다.');
+              if (!deleteResponse.ok) {
+                throw new Error(await apiErrorMessage(deleteResponse, '메모를 삭제하지 못했습니다.'));
+              }
               if (editingNoteId === note.id) resetNoteForm();
               activeNotesToken = null;
               await loadNotes(currentSession);
@@ -275,7 +288,9 @@
           body: JSON.stringify(payload),
           cache: 'no-store',
         });
-        if (!saveResponse.ok) throw new Error('메모를 저장하지 못했습니다.');
+        if (!saveResponse.ok) {
+          throw new Error(await apiErrorMessage(saveResponse, '메모를 저장하지 못했습니다.'));
+        }
         resetNoteForm();
         activeNotesToken = null;
         await loadNotes(currentSession);

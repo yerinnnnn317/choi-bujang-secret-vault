@@ -22,8 +22,8 @@ function noteFields(body) {
   return { title: body.title, content: body.body };
 }
 
-function apiError(response, status, error) {
-  return response.status(status).json({ error });
+function apiError(response, status, error, message) {
+  return response.status(status).json({ error, ...(message ? { message } : {}) });
 }
 
 export default async function handler(request, response) {
@@ -82,8 +82,38 @@ export default async function handler(request, response) {
   notesUrl.searchParams.set('select', 'id,title,content');
   const headers = {
     apikey: secretKey,
-    Authorization: `******,
+    Authorization: 'Bearer ' + secretKey,
   };
+  if (id) {
+    const ownerCheckUrl = new URL(notesUrl);
+    ownerCheckUrl.searchParams.set('select', 'owner_id');
+    ownerCheckUrl.searchParams.set('id', `eq.${id}`);
+
+    let ownerCheck;
+    try {
+      ownerCheck = await fetch(ownerCheckUrl, {
+        headers,
+        cache: 'no-store',
+      });
+    } catch {
+      return apiError(response, 502, 'NOTES_UNAVAILABLE');
+    }
+    if (!ownerCheck.ok) return apiError(response, 502, 'NOTES_UNAVAILABLE');
+
+    let existingRows;
+    try {
+      existingRows = await ownerCheck.json();
+    } catch {
+      return apiError(response, 502, 'NOTES_UNAVAILABLE');
+    }
+    if (!Array.isArray(existingRows)) return apiError(response, 502, 'NOTES_UNAVAILABLE');
+    if (!existingRows.length) return apiError(response, 404, 'NOT_FOUND');
+    if (existingRows[0].owner_id !== identity.userId) {
+      return apiError(response, 403, 'NOTE_FORBIDDEN',
+        '이 메모의 소유자가 아니므로 조회·수정·삭제할 수 없습니다.');
+    }
+  }
+
   let method = request.method;
   let body;
 
@@ -100,6 +130,7 @@ export default async function handler(request, response) {
     headers.Prefer = 'return=minimal';
   } else {
     notesUrl.searchParams.set('id', `eq.${id}`);
+    notesUrl.searchParams.set('owner_id', `eq.${identity.userId}`);
     if (method === 'GET') {
       headers.Accept = 'application/json';
     } else if (method === 'PUT') {

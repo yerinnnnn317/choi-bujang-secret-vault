@@ -134,7 +134,7 @@ test('자료 API는 설정된 Supabase 발급자 정보와 서버 검증기를 �
   const config = JSON.parse(await readFile(new URL('../aleph.config.json', import.meta.url), 'utf8'));
   const api = await readFile(new URL('../api/notes.js', import.meta.url), 'utf8');
   const dynamicRoute = await readFile(new URL('../api/notes/[id].js', import.meta.url), 'utf8');
-  assert.equal(config.step, 3);
+  assert.equal(config.step, 4);
   assert.deepEqual(config.allowedRoutes, [
     'GET /api/notes',
     'POST /api/notes',
@@ -154,6 +154,9 @@ test('자료 API는 설정된 Supabase 발급자 정보와 서버 검증기를 �
   assert.match(api, /owner_id: identity\.userId/u);
   assert.match(api, /owner_id.*identity\.userId/su);
   assert.match(api, /notesUrl\.searchParams\.set\('id', `eq\.\$\{id\}`\)/u);
+  assert.match(api, /existingRows\[0\]\.owner_id !== identity\.userId/u);
+  assert.match(api, /apiError\(response, 403, 'NOTE_FORBIDDEN'/u);
+  assert.match(api, /notesUrl\.searchParams\.set\('owner_id', `eq\.\$\{identity\.userId\}`\)/u);
   assert.match(api, /randomUUID\(\)/u);
   assert.match(api, /apiError\(response, 404, 'NOT_FOUND'\)/u);
   assert.match(dynamicRoute, /from '\.\.\/notes\.js'/u);
@@ -173,6 +176,9 @@ test('자료 화면은 서버 API만 호출하고 정적 자료 파일을 배포
   assert.match(html, /note-form/u);
   assert.match(html, /method: editingId \? 'PUT' : 'POST'/u);
   assert.match(html, /method: 'DELETE'/u);
+  assert.match(html, /async function apiErrorMessage/u);
+  assert.match(html, /apiErrorMessage\(deleteResponse/u);
+  assert.match(html, /apiErrorMessage\(saveResponse/u);
   assert.doesNotMatch(build, /writeFile\(.*data\.json/su);
   await assert.rejects(readFile(new URL('../public/data.json', import.meta.url)));
 });
