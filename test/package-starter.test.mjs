@@ -99,8 +99,9 @@ test('자료 API는 토큰이 없거나 유효하지 않으면 자료 조회 전
     const { default: handler } = await import('../api/notes.js');
     let status;
     let body;
+    const responseHeaders = new Map();
     const response = {
-      setHeader: () => {},
+      setHeader: (name, value) => responseHeaders.set(name.toLowerCase(), value),
       status: value => {
         status = value;
         return { json: value => { body = value; } };
@@ -113,6 +114,7 @@ test('자료 API는 토큰이 없거나 유효하지 않으면 자료 조회 전
       error: 'UNAUTHORIZED',
       message: '유효한 로그인 토큰이 필요합니다.',
     });
+    assert.equal(responseHeaders.get('content-type'), 'application/json; charset=utf-8');
 
     await handler({
       method: 'GET',
@@ -124,6 +126,7 @@ test('자료 API는 토큰이 없거나 유효하지 않으면 자료 조회 전
       error: 'UNAUTHORIZED',
       message: '로그인 토큰을 확인할 수 없습니다.',
     });
+    assert.equal(responseHeaders.get('content-type'), 'application/json; charset=utf-8');
     const requests = [
       { method: 'GET', url: '/api/notes' },
       { method: 'POST', url: '/api/notes' },
@@ -146,6 +149,7 @@ test('자료 API는 토큰이 없거나 유효하지 않으면 자료 조회 전
             ? '로그인 토큰을 확인할 수 없습니다.'
             : '유효한 로그인 토큰이 필요합니다.',
         });
+        assert.equal(responseHeaders.get('content-type'), 'application/json; charset=utf-8');
       }
     }
     assert.equal(fetchCount, 0);

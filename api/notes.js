@@ -23,6 +23,7 @@ function noteFields(body) {
 }
 
 function apiError(response, status, error, message) {
+  response.setHeader('Content-Type', 'application/json; charset=utf-8');
   return response.status(status).json({ error, ...(message ? { message } : {}) });
 }
 
