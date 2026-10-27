@@ -202,6 +202,7 @@ test('자료 API는 설정된 Supabase 발급자 정보와 서버 검증기를 �
   const api = await readFile(new URL('../api/notes.js', import.meta.url), 'utf8');
   const dynamicRoute = await readFile(new URL('../api/notes/[id].js', import.meta.url), 'utf8');
   assert.equal(config.step, 4);
+  assert.equal(config.publicAppUrl, 'https://choi-bujang-secret-vault-orpin.vercel.app/');
   assert.deepEqual(config.allowedRoutes, [
     'GET /api/notes',
     'POST /api/notes',
