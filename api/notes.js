@@ -51,7 +51,7 @@ export default async function handler(request, response) {
 
   const authorization = request.headers?.authorization;
   if (typeof authorization !== 'string' || !authorization.startsWith('Bearer ')) {
-    return apiError(response, 401, 'UNAUTHORIZED');
+    return apiError(response, 401, 'UNAUTHORIZED', '유효한 로그인 토큰이 필요합니다.');
   }
 
   const supabaseUrl = process.env.SUPABASE_URL;
@@ -70,13 +70,24 @@ export default async function handler(request, response) {
     ? { ...config, publicAppUrl: `https://${deploymentHost}/` }
     : config;
   if (!verifyLoginAuthorization) {
-    verifyLoginAuthorization = createLoginVerifier({
-      config: verifierConfig,
-      supabaseSecretKey: secretKey,
-    });
+    try {
+      verifyLoginAuthorization = createLoginVerifier({
+        config: verifierConfig,
+        supabaseSecretKey: secretKey,
+      });
+    } catch {
+      return apiError(response, 500, 'NOTES_UNAVAILABLE');
+    }
   }
-  const identity = await verifyLoginAuthorization(authorization);
-  if (!identity) return apiError(response, 401, 'UNAUTHORIZED');
+  let identity;
+  try {
+    identity = await verifyLoginAuthorization(authorization);
+  } catch {
+    return apiError(response, 401, 'UNAUTHORIZED', '로그인 토큰을 확인할 수 없습니다.');
+  }
+  if (!identity) {
+    return apiError(response, 401, 'UNAUTHORIZED', '로그인 토큰을 확인할 수 없습니다.');
+  }
 
   const notesUrl = new URL('/rest/v1/training_notes', baseUrl);
   notesUrl.searchParams.set('select', 'id,title,content');

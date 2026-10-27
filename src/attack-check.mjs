@@ -14,20 +14,43 @@ export async function runAttackChecks(config) {
       || app.pathname !== '/' || app.hostname.endsWith('.example')) {
     throw new Error('aleph.config.json의 실제 배포 주소를 먼저 넣어 주세요.');
   }
-  const response = await fetch(new URL('/data.json', app), {
+  const apiUrl = new URL('/api/notes', app);
+  const anonymousResponse = await fetch(apiUrl, {
     redirect: 'error', signal: AbortSignal.timeout(10000),
   });
-  let noPublicNotes = [401, 403, 404].includes(response.status);
-  if (response.ok) {
-    try {
-      const data = await response.json();
-      noPublicNotes = Array.isArray(data?.notes) && data.notes.length === 0;
-    } catch {
-      noPublicNotes = false;
+  const fakeTokenResponse = await fetch(apiUrl, {
+    headers: { Authorization: 'Bearer invalid' },
+    redirect: 'error',
+    signal: AbortSignal.timeout(10000),
+  });
+  const isJsonAuthDenial = async response => {
+    if (![401, 403].includes(response.status)
+        || !response.headers.get('content-type')?.toLowerCase().includes('application/json')) {
+      return false;
     }
-  }
-  return [{ attackId: 'anonymous_note_read', expected: '비로그인 요청에서 공개 메모가 없어야 함',
-    observed: noPublicNotes
-      ? `비로그인 요청에서 공개 메모가 없음 (HTTP ${response.status})`
-      : `비로그인 요청에서 공개 메모가 있거나 응답 확인 실패 (HTTP ${response.status})` }];
+    try {
+      const body = await response.json();
+      return typeof body?.error === 'string' && body.error.length > 0;
+    } catch {
+      return false;
+    }
+  };
+  const anonymousDenied = await isJsonAuthDenial(anonymousResponse);
+  const fakeTokenDenied = await isJsonAuthDenial(fakeTokenResponse);
+  return [
+    {
+      attackId: 'anonymous_note_read',
+      expected: '토큰이 없는 GET /api/notes 요청은 JSON 401 또는 403이어야 함',
+      observed: anonymousDenied
+        ? `비로그인 목록 요청이 JSON으로 거부됨 (HTTP ${anonymousResponse.status})`
+        : `비로그인 목록 요청이 JSON 401/403으로 거부되지 않음 (HTTP ${anonymousResponse.status})`,
+    },
+    {
+      attackId: 'fake_token_note_read',
+      expected: '위조 토큰의 GET /api/notes 요청은 JSON 401 또는 403이어야 함',
+      observed: fakeTokenDenied
+        ? `위조 토큰 목록 요청이 JSON으로 거부됨 (HTTP ${fakeTokenResponse.status})`
+        : `위조 토큰 목록 요청이 JSON 401/403으로 거부되지 않음 (HTTP ${fakeTokenResponse.status})`,
+    },
+  ];
 }

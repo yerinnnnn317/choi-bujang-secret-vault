@@ -109,7 +109,10 @@ test('자료 API는 토큰이 없거나 유효하지 않으면 자료 조회 전
 
     await handler({ method: 'GET', url: '/api/notes' }, response);
     assert.equal(status, 401);
-    assert.deepEqual(body, { error: 'UNAUTHORIZED' });
+    assert.deepEqual(body, {
+      error: 'UNAUTHORIZED',
+      message: '유효한 로그인 토큰이 필요합니다.',
+    });
 
     await handler({
       method: 'GET',
@@ -117,7 +120,34 @@ test('자료 API는 토큰이 없거나 유효하지 않으면 자료 조회 전
       headers: { authorization: 'Bearer not-a-token' },
     }, response);
     assert.equal(status, 401);
-    assert.deepEqual(body, { error: 'UNAUTHORIZED' });
+    assert.deepEqual(body, {
+      error: 'UNAUTHORIZED',
+      message: '로그인 토큰을 확인할 수 없습니다.',
+    });
+    const requests = [
+      { method: 'GET', url: '/api/notes' },
+      { method: 'POST', url: '/api/notes' },
+      { method: 'GET', url: '/api/notes/123e4567-e89b-42d3-a456-426614174000' },
+      { method: 'PUT', url: '/api/notes/123e4567-e89b-42d3-a456-426614174000' },
+      { method: 'DELETE', url: '/api/notes/123e4567-e89b-42d3-a456-426614174000' },
+    ];
+    for (const request of requests) {
+      for (const authorization of [undefined, 'Bearer invalid-token']) {
+        status = undefined;
+        body = undefined;
+        await handler({
+          ...request,
+          headers: authorization ? { authorization } : undefined,
+        }, response);
+        assert.equal(status, 401);
+        assert.deepEqual(body, {
+          error: 'UNAUTHORIZED',
+          message: authorization
+            ? '로그인 토큰을 확인할 수 없습니다.'
+            : '유효한 로그인 토큰이 필요합니다.',
+        });
+      }
+    }
     assert.equal(fetchCount, 0);
   } finally {
     globalThis.fetch = originalFetch;
@@ -127,6 +157,43 @@ test('자료 API는 토큰이 없거나 유효하지 않으면 자료 조회 전
     else process.env.SUPABASE_SECRET_KEY = originalKey;
     if (originalVercelUrl === undefined) delete process.env.VERCEL_URL;
     else process.env.VERCEL_URL = originalVercelUrl;
+  }
+});
+
+test('Vercel은 첫 화면을 포함한 모든 경로에 nosniff 응답 헤더를 설정한다', async () => {
+  const vercel = JSON.parse(await readFile(new URL('../vercel.json', import.meta.url), 'utf8'));
+  assert.ok(vercel.headers.some(({ source, headers }) => source === '/(.*)'
+    && headers.some(({ key, value }) =>
+      key === 'X-Content-Type-Options' && value === 'nosniff')));
+});
+
+test('제출 자체 점검은 실제 앱의 무인증·위조 토큰 메모 목록 요청을 검사한다', async () => {
+  const originalFetch = globalThis.fetch;
+  const requests = [];
+  try {
+    globalThis.fetch = async (url, options) => {
+      requests.push({ url: String(url), options });
+      return new Response(JSON.stringify({ error: 'UNAUTHORIZED' }), {
+        status: 401,
+        headers: { 'content-type': 'application/json' },
+      });
+    };
+    const { runAttackChecks } = await import('../src/attack-check.mjs');
+    const attempts = await runAttackChecks({
+      step: 4,
+      publicAppUrl: 'https://student-defense.vercel.app/',
+    });
+    assert.equal(requests.length, 2);
+    assert.ok(requests.every(({ url }) => url === 'https://student-defense.vercel.app/api/notes'));
+    assert.equal(requests[0].options.headers, undefined);
+    assert.equal(requests[1].options.headers.Authorization, 'Bearer invalid');
+    assert.deepEqual(attempts.map(({ attackId }) => attackId), [
+      'anonymous_note_read',
+      'fake_token_note_read',
+    ]);
+    assert.ok(attempts.every(({ observed }) => observed.includes('JSON으로 거부됨')));
+  } finally {
+    globalThis.fetch = originalFetch;
   }
 });
 

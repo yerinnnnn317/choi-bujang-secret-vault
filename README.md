@@ -22,7 +22,7 @@ Vercel 프로젝트의 **Settings → Environment Variables**에서 `SUPABASE_UR
 
 화면의 Supabase Auth 이메일·비밀번호 로그인과 로그아웃은 공식 JavaScript SDK의 세션 기능을 사용합니다. 브라우저에 포함된 Supabase Project URL과 publishable key는 공개 설정값이며, 비밀번호와 세션 토큰을 코드에서 만들지 않습니다.
 
-`/api/notes`는 `src/verify-login.mjs`를 사용해 요청의 Supabase access token을 서버에서 검증하고, 누락·무효 토큰은 `401`로 거부합니다. 브라우저가 보낸 사용자 ID나 역할은 신뢰하지 않습니다. 서버 비밀키는 브라우저에 전달되지 않습니다.
+`/api/notes`와 `/api/notes/:id`의 GET·POST·PUT·DELETE는 `src/verify-login.mjs`를 사용해 요청의 Supabase access token을 서버에서 검증하고, 누락·위조·만료 등 유효하지 않은 토큰은 자료 조회 전에 JSON `401`로 거부합니다. 브라우저가 보낸 사용자 ID나 역할은 신뢰하지 않습니다. 서버 비밀키는 브라우저에 전달되지 않습니다. `vercel.json`은 모든 경로(첫 화면 포함)에 `X-Content-Type-Options: nosniff`를 설정합니다.
 
 ## 3~4단계 메모 API
 
