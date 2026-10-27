@@ -46,6 +46,8 @@ Vercel 프로젝트의 **Settings → Environment Variables**에서 `SUPABASE_UR
 
 `vercel.json`은 정적 결과물 `public`을 배포합니다. 2단계 이후 `npm run build`는 Vercel이 제공하는 GitHub 저장소 소유자·이름, 커밋 SHA, 배포 URL을 검증하고 `public/aleph.json`을 생성합니다. 빌드는 정적 `public/data.json`을 만들지 않고 오래된 파일이 있으면 제거합니다. 로컬에서 화면만 확인할 때는 `npm run build -- --local`을 사용합니다. 로컬 빌드는 배포나 Supabase SQL 실행을 증명하지 않습니다.
 
+`main`에 배포 변경을 push한 뒤 실제 앱 주소의 `/aleph.json`에서 단계, 커밋 SHA, `publicAppUrl`이 최신 커밋과 `https://choi-bujang-secret-vault-orpin.vercel.app/`인지 확인합니다. 같은 배포의 `/api/notes`는 토큰 없는 요청과 위조 토큰 요청 모두 JSON 오류와 HTTP `401` 또는 `403`을 반환해야 합니다. `200`이면 최신 배포가 적용되지 않은 것이므로 점검 통과로 기록하지 않습니다.
+
 ## 가상 메모 노출 확인 및 기록
 
 최신 배포와 GitHub 기본 브랜치의 최신 커밋을 각각 확인합니다. 검색할 문장은 [supabase/step-2-training-notes.sql](supabase/step-2-training-notes.sql)의 네 `content` 값입니다.
