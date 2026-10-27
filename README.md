@@ -48,6 +48,8 @@ Vercel 프로젝트의 **Settings → Environment Variables**에서 `SUPABASE_UR
 
 `main`에 배포 변경을 push한 뒤 실제 앱 주소의 `/aleph.json`에서 단계, 커밋 SHA, `publicAppUrl`이 최신 커밋과 `https://choi-bujang-secret-vault-orpin.vercel.app/`인지 확인합니다. 같은 배포의 `/api/notes`는 토큰 없는 요청과 위조 토큰 요청 모두 JSON 오류와 HTTP `401` 또는 `403`을 반환해야 합니다. `200`이면 최신 배포가 적용되지 않은 것이므로 점검 통과로 기록하지 않습니다.
 
+Vercel 배포가 막혀 로컬 서버에서만 확인할 때는 `ALEPH_CHECK_URL=http://127.0.0.1:3000/` 환경변수를 지정한 뒤 `npm run bundle`을 실행합니다. 이 설정은 `localhost`, `127.0.0.1`, `[::1]` 주소만 허용하며 제출물의 점검 결과에 로컬 요청임을 표시합니다. 로컬 점검은 원격 배포의 갱신이나 검증을 의미하지 않습니다.
+
 ## 가상 메모 노출 확인 및 기록
 
 최신 배포와 GitHub 기본 브랜치의 최신 커밋을 각각 확인합니다. 검색할 문장은 [supabase/step-2-training-notes.sql](supabase/step-2-training-notes.sql)의 네 `content` 값입니다.

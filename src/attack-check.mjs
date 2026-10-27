@@ -4,15 +4,22 @@ export async function runAttackChecks(config) {
   if (!Number.isInteger(config.step) || config.step < 2) {
     throw new Error('2단계 이후의 공격 점검을 src/attack-check.mjs에 구현해 주세요.');
   }
+  const checkUrl = process.env.ALEPH_CHECK_URL ?? config.publicAppUrl;
+  const localCheck = process.env.ALEPH_CHECK_URL !== undefined;
   let app;
   try {
-    app = new URL(config.publicAppUrl);
+    app = new URL(checkUrl);
   } catch {
-    throw new Error('aleph.config.json의 실제 배포 주소를 먼저 넣어 주세요.');
+    throw new Error('점검 주소를 올바른 URL로 설정해 주세요.');
   }
-  if (app.protocol !== 'https:' || app.username || app.password || app.search || app.hash
-      || app.pathname !== '/' || app.hostname.endsWith('.example')) {
-    throw new Error('aleph.config.json의 실제 배포 주소를 먼저 넣어 주세요.');
+  const isLoopback = ['localhost', '127.0.0.1', '[::1]'].includes(app.hostname);
+  if (app.username || app.password || app.search || app.hash || app.pathname !== '/'
+      || (localCheck
+        ? !['http:', 'https:'].includes(app.protocol) || !isLoopback
+        : app.protocol !== 'https:' || app.hostname.endsWith('.example'))) {
+    throw new Error(localCheck
+      ? 'ALEPH_CHECK_URL은 localhost 또는 루프백 주소만 사용할 수 있습니다.'
+      : 'aleph.config.json의 실제 배포 주소를 먼저 넣어 주세요.');
   }
   const apiUrl = new URL('/api/notes', app);
   const anonymousResponse = await fetch(apiUrl, {
@@ -42,15 +49,15 @@ export async function runAttackChecks(config) {
       attackId: 'anonymous_note_read',
       expected: '토큰이 없는 GET /api/notes 요청은 JSON 401 또는 403이어야 함',
       observed: anonymousDenied
-        ? `비로그인 목록 요청이 JSON으로 거부됨 (HTTP ${anonymousResponse.status})`
-        : `비로그인 목록 요청이 JSON 401/403으로 거부되지 않음 (HTTP ${anonymousResponse.status})`,
+        ? `${localCheck ? '로컬 ' : ''}비로그인 목록 요청이 JSON으로 거부됨 (HTTP ${anonymousResponse.status})`
+        : `${localCheck ? '로컬 ' : ''}비로그인 목록 요청이 JSON 401/403으로 거부되지 않음 (HTTP ${anonymousResponse.status})`,
     },
     {
       attackId: 'fake_token_note_read',
       expected: '위조 토큰의 GET /api/notes 요청은 JSON 401 또는 403이어야 함',
       observed: fakeTokenDenied
-        ? `위조 토큰 목록 요청이 JSON으로 거부됨 (HTTP ${fakeTokenResponse.status})`
-        : `위조 토큰 목록 요청이 JSON 401/403으로 거부되지 않음 (HTTP ${fakeTokenResponse.status})`,
+        ? `${localCheck ? '로컬 ' : ''}위조 토큰 목록 요청이 JSON으로 거부됨 (HTTP ${fakeTokenResponse.status})`
+        : `${localCheck ? '로컬 ' : ''}위조 토큰 목록 요청이 JSON 401/403으로 거부되지 않음 (HTTP ${fakeTokenResponse.status})`,
     },
   ];
 }

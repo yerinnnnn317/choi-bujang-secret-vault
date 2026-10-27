@@ -173,8 +173,10 @@ test('Vercel은 첫 화면을 포함한 모든 경로에 nosniff 응답 헤더�
 
 test('제출 자체 점검은 실제 앱의 무인증·위조 토큰 메모 목록 요청을 검사한다', async () => {
   const originalFetch = globalThis.fetch;
+  const originalCheckUrl = process.env.ALEPH_CHECK_URL;
   const requests = [];
   try {
+    process.env.ALEPH_CHECK_URL = 'http://127.0.0.1:3000/';
     globalThis.fetch = async (url, options) => {
       requests.push({ url: String(url), options });
       return new Response(JSON.stringify({ error: 'UNAUTHORIZED' }), {
@@ -188,16 +190,25 @@ test('제출 자체 점검은 실제 앱의 무인증·위조 토큰 메모 목�
       publicAppUrl: 'https://student-defense.vercel.app/',
     });
     assert.equal(requests.length, 2);
-    assert.ok(requests.every(({ url }) => url === 'https://student-defense.vercel.app/api/notes'));
+    assert.ok(requests.every(({ url }) => url === 'http://127.0.0.1:3000/api/notes'));
     assert.equal(requests[0].options.headers, undefined);
     assert.equal(requests[1].options.headers.Authorization, 'Bearer invalid');
     assert.deepEqual(attempts.map(({ attackId }) => attackId), [
       'anonymous_note_read',
       'fake_token_note_read',
     ]);
-    assert.ok(attempts.every(({ observed }) => observed.includes('JSON으로 거부됨')));
+    assert.ok(attempts.every(({ observed }) =>
+      observed.includes('로컬') && observed.includes('JSON으로 거부됨 (HTTP 401)')));
+    process.env.ALEPH_CHECK_URL = 'https://example.com/';
+    await assert.rejects(runAttackChecks({
+      step: 4,
+      publicAppUrl: 'https://student-defense.vercel.app/',
+    }), /localhost 또는 루프백 주소/u);
+    assert.equal(requests.length, 2);
   } finally {
     globalThis.fetch = originalFetch;
+    if (originalCheckUrl === undefined) delete process.env.ALEPH_CHECK_URL;
+    else process.env.ALEPH_CHECK_URL = originalCheckUrl;
   }
 });
 
