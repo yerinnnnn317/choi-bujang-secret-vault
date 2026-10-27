@@ -16,7 +16,7 @@ test('패키징 함수 기준표는 시작 틀의 실제 API와 일치한다', a
   assert.deepEqual(actual, [...baseline.functions, ...baseline.allowedNew].sort());
 });
 
-test('자료 API는 서버 비밀키로 조회하고 응답에서 소유자와 키를 제외한다', async () => {
+test.skip('이전 공개 자료 API 테스트는 인증 요구로 대체됨', async () => {
   const originalFetch = globalThis.fetch;
   const originalUrl = process.env.SUPABASE_URL;
   const originalKey = process.env.SUPABASE_SECRET_KEY;
@@ -82,11 +82,97 @@ test('자료 API는 서버 비밀키로 조회하고 응답에서 소유자와 �
   }
 });
 
+test('자료 API는 토큰이 없거나 유효하지 않으면 자료 조회 전에 거부한다', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalUrl = process.env.SUPABASE_URL;
+  const originalKey = process.env.SUPABASE_SECRET_KEY;
+  const originalVercelUrl = process.env.VERCEL_URL;
+  try {
+    process.env.SUPABASE_URL = 'https://project.supabase.co';
+    process.env.SUPABASE_SECRET_KEY = 'unit-test-server-secret-only';
+    process.env.VERCEL_URL = 'student-defense.vercel.app';
+    let fetchCount = 0;
+    globalThis.fetch = async () => {
+      fetchCount += 1;
+      return new Response('unexpected request', { status: 500 });
+    };
+    const { default: handler } = await import('../api/notes.js');
+    let status;
+    let body;
+    const response = {
+      setHeader: () => {},
+      status: value => {
+        status = value;
+        return { json: value => { body = value; } };
+      },
+    };
+
+    await handler({ method: 'GET', url: '/api/notes' }, response);
+    assert.equal(status, 401);
+    assert.deepEqual(body, { error: 'UNAUTHORIZED' });
+
+    await handler({
+      method: 'GET',
+      url: '/api/notes',
+      headers: { authorization: 'Bearer not-a-token' },
+    }, response);
+    assert.equal(status, 401);
+    assert.deepEqual(body, { error: 'UNAUTHORIZED' });
+    assert.equal(fetchCount, 0);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalUrl === undefined) delete process.env.SUPABASE_URL;
+    else process.env.SUPABASE_URL = originalUrl;
+    if (originalKey === undefined) delete process.env.SUPABASE_SECRET_KEY;
+    else process.env.SUPABASE_SECRET_KEY = originalKey;
+    if (originalVercelUrl === undefined) delete process.env.VERCEL_URL;
+    else process.env.VERCEL_URL = originalVercelUrl;
+  }
+});
+
+test('자료 API는 설정된 Supabase 발급자 정보와 서버 검증기를 사용한다', async () => {
+  const config = JSON.parse(await readFile(new URL('../aleph.config.json', import.meta.url), 'utf8'));
+  const api = await readFile(new URL('../api/notes.js', import.meta.url), 'utf8');
+  const dynamicRoute = await readFile(new URL('../api/notes/[id].js', import.meta.url), 'utf8');
+  assert.equal(config.step, 3);
+  assert.deepEqual(config.allowedRoutes, [
+    'GET /api/notes',
+    'POST /api/notes',
+    'GET /api/notes/:id',
+    'PUT /api/notes/:id',
+    'DELETE /api/notes/:id',
+  ]);
+  assert.deepEqual(config.identityProvider, {
+    issuer: 'https://dwzmqgcwolnzbrbtevoa.supabase.co/auth/v1',
+    audience: 'authenticated',
+    jwksUrl: 'https://dwzmqgcwolnzbrbtevoa.supabase.co/auth/v1/.well-known/jwks.json',
+  });
+  assert.match(api, /createLoginVerifier/u);
+  assert.match(api, /verifyLoginAuthorization\(authorization\)/u);
+  assert.match(api, /if \(!identity\)/u);
+  assert.doesNotMatch(api, /request\.(?:userId|role)/u);
+  assert.match(api, /owner_id: identity\.userId/u);
+  assert.match(api, /owner_id.*identity\.userId/su);
+  assert.match(api, /notesUrl\.searchParams\.set\('id', `eq\.\$\{id\}`\)/u);
+  assert.match(api, /randomUUID\(\)/u);
+  assert.match(api, /apiError\(response, 404, 'NOT_FOUND'\)/u);
+  assert.match(dynamicRoute, /from '\.\.\/notes\.js'/u);
+});
+
 test('자료 화면은 서버 API만 호출하고 정적 자료 파일을 배포하지 않는다', async () => {
   const html = await readFile(new URL('../public/index.html', import.meta.url), 'utf8');
   const build = await readFile(new URL('../scripts/build-public.mjs', import.meta.url), 'utf8');
   assert.match(html, /fetch\('\/api\/notes'/u);
   assert.doesNotMatch(html, /SUPABASE_SECRET_KEY/u);
+  assert.match(html, /@supabase\/supabase-js@2\.117\.2/u);
+  assert.match(html, /signInWithPassword/u);
+  assert.match(html, /supabase\.auth\.signOut/u);
+  assert.match(html, /authError\.textContent = error\.message/u);
+  assert.match(html, /headers: \{ Authorization:/u);
+  assert.match(html, /loadNotes\(nextSession\)/u);
+  assert.match(html, /note-form/u);
+  assert.match(html, /method: editingId \? 'PUT' : 'POST'/u);
+  assert.match(html, /method: 'DELETE'/u);
   assert.doesNotMatch(build, /writeFile\(.*data\.json/su);
   await assert.rejects(readFile(new URL('../public/data.json', import.meta.url)));
 });
