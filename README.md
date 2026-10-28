@@ -52,6 +52,10 @@ Vercel 배포가 막혀 로컬 서버에서만 확인할 때는 `ALEPH_CHECK_URL
 
 로컬 번들 검증은 Vercel 배포 상태와 별개로, 실제 서버 API의 무인증·위조 토큰 401 응답을 제출 묶음에 기록하는 절차입니다.
 
+## 4단계 저장점
+
+현재 기능은 로그인한 사용자의 메모만 읽기·추가·수정·삭제하며, 서버가 검증한 사용자 ID와 메모 `owner_id`를 비교해 다른 사용자의 메모를 차단합니다. `POST`에서는 `owner_id`를 HTTP 요청값 대신 검증된 사용자 ID로 저장하고, `PUT`/`DELETE`는 기존 행과 새 행의 소유자가 모두 본인인지 확인합니다. `GET /api/notes`, `POST /api/notes`, `GET /api/notes/:id`, `PUT /api/notes/:id`, `DELETE /api/notes/:id`는 `aleph.config.json`의 `allowedRoutes`와 일치합니다. 로컬에서 다시 확인할 때는 `npm run test:package`를 먼저 실행하고, 실제 앱은 `npx vercel dev`로 로그인·본인 메모 CRUD·타인 메모 거부를 검증합니다.
+
 ## 가상 메모 노출 확인 및 기록
 
 최신 배포와 GitHub 기본 브랜치의 최신 커밋을 각각 확인합니다. 검색할 문장은 [supabase/step-2-training-notes.sql](supabase/step-2-training-notes.sql)의 네 `content` 값입니다.
