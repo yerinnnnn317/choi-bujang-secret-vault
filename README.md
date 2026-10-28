@@ -6,7 +6,7 @@
 
 `aleph.config.json`의 `originalApiUrl`은 Supabase 학습 메모 REST 엔드포인트를 가리키며, `vercel.json`의 `X-Content-Type-Options: nosniff` 헤더가 적용된 상태를 확인했습니다. 이 검증은 무인증·위조 토큰 요청이 JSON 401/403으로 거부되고 마지막 제출 묶음이 다시 생성되도록 유지합니다.
 
-<!-- 2026-10-28T10:35:50Z force bundle refresh for 5-step validation -->
+<!-- 2026-10-28T10:41:41Z final 5-step validation checkpoint -->
 
 ## 5단계 저장점
 
