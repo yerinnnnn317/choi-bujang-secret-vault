@@ -1,0 +1,41 @@
+{
+  "schema": "aleph.defense.submission.v2",
+  "step": 5,
+  "commit": "aad60a185ea7add7efce6ba7ebba6770f4668002",
+  "repoUrl": "https://github.com/yerinnnnn317/choi-bujang-secret-vault",
+  "changedFiles": [
+    "README.md",
+    "aleph.config.json"
+  ],
+  "policyRules": [
+    "starter.deny"
+  ],
+  "attackAttempts": [
+    {
+      "attackId": "anonymous_note_read",
+      "expected": "토큰이 없는 GET /api/notes 요청은 JSON 401 또는 403이어야 함",
+      "observed": "비로그인 목록 요청이 JSON으로 거부됨 (HTTP 401)"
+    },
+    {
+      "attackId": "fake_token_note_read",
+      "expected": "위조 토큰의 GET /api/notes 요청은 JSON 401 또는 403이어야 함",
+      "observed": "위조 토큰 목록 요청이 JSON으로 거부됨 (HTTP 401)"
+    }
+  ],
+  "explanation": "5단계 저장점에서는 인증된 사용자별 메모 API와 소유자 검증을 유지하면서 실제 배포 주소와 원본 API URL을 기록합니다.\n로그인 토큰 누락·위조·타인 메모 접근은 JSON 401/403으로 거부되고, vercel.json의 nosniff 헤더와 허용 경로 설정도 확인했습니다.\n최종 제출은 bundle로 생성하며 실제 비밀값과 메모 본문은 전부 제외해 안전하게 기록합니다.",
+  "blockedAt": null,
+  "identityProvider": {
+    "issuer": "https://dwzmqgcwolnzbrbtevoa.supabase.co/auth/v1",
+    "audience": "authenticated",
+    "jwksUrl": "https://dwzmqgcwolnzbrbtevoa.supabase.co/auth/v1/.well-known/jwks.json"
+  },
+  "allowedRoutes": [
+    "GET /api/notes",
+    "POST /api/notes",
+    "GET /api/notes/:id",
+    "PUT /api/notes/:id",
+    "DELETE /api/notes/:id"
+  ],
+  "originalApiUrl": "https://dwzmqgcwolnzbrbtevoa.supabase.co/rest/v1/training_notes",
+  "restoreRoute": null
+}

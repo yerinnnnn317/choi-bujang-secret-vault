@@ -89,3 +89,4 @@ Vercel 배포가 막혀 로컬 서버에서만 확인할 때는 `ALEPH_CHECK_URL
 [AGENTS.md](AGENTS.md)를 먼저 읽히고 한 번에 한 제작 단위만 요청하세요. 이후 단계에서는 API 허용 경로, 원본 API 주소, 정책 규칙 및 실제 서버 접근 제어를 각 단계 원고와 계약에 맞춰 추가합니다. 비밀번호·토큰·서버 전용 키·실제 학생 기록을 코드, Git, 제출 묶음에 넣지 않습니다.
 
 `src/decider.mjs`와 `src/detect.mjs`의 로컬 시험은 반 엔진이나 운영 심판의 결과가 아닙니다. 제출 묶음 계약 `aleph.defense.submission.v2`는 `scripts/bundle.mjs`에 있습니다.
+

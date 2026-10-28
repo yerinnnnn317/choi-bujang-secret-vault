@@ -9,7 +9,7 @@
     "audience": "authenticated",
     "jwksUrl": "https://dwzmqgcwolnzbrbtevoa.supabase.co/auth/v1/.well-known/jwks.json"
   },
-    "allowedRoutes": [
+  "allowedRoutes": [
     "GET /api/notes",
     "POST /api/notes",
     "GET /api/notes/:id",
