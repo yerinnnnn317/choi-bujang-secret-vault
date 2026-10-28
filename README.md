@@ -50,6 +50,8 @@ Vercel 프로젝트의 **Settings → Environment Variables**에서 `SUPABASE_UR
 
 Vercel 배포가 막혀 로컬 서버에서만 확인할 때는 `ALEPH_CHECK_URL=http://127.0.0.1:3000/` 환경변수를 지정한 뒤 `npm run bundle`을 실행합니다. 이 설정은 `localhost`, `127.0.0.1`, `[::1]` 주소만 허용하며 제출물의 점검 결과에 로컬 요청임을 표시합니다. 로컬 점검은 원격 배포의 갱신이나 검증을 의미하지 않습니다.
 
+로컬 번들 검증은 Vercel 배포 상태와 별개로, 실제 서버 API의 무인증·위조 토큰 401 응답을 제출 묶음에 기록하는 절차입니다.
+
 ## 가상 메모 노출 확인 및 기록
 
 최신 배포와 GitHub 기본 브랜치의 최신 커밋을 각각 확인합니다. 검색할 문장은 [supabase/step-2-training-notes.sql](supabase/step-2-training-notes.sql)의 네 `content` 값입니다.
