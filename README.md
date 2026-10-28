@@ -6,6 +6,8 @@
 
 `aleph.config.json`의 `originalApiUrl`은 Supabase 학습 메모 REST 엔드포인트를 가리키며, `vercel.json`의 `X-Content-Type-Options: nosniff` 헤더가 적용된 상태를 확인했습니다. 이 검증은 무인증·위조 토큰 요청이 JSON 401/403으로 거부되고 마지막 제출 묶음이 다시 생성되도록 유지합니다.
 
+<!-- 2026-10-28T10:35:50Z force bundle refresh for 5-step validation -->
+
 ## 5단계 저장점
 
 현재 기능은 사용자 로그인 검증, 본인 메모 목록 조회, 추가·수정·삭제, 타인 메모 차단, 그리고 원본 자료 API URL 메타 기록을 함께 유지하는 상태입니다. `aleph.config.json`의 `step`은 5이며 E2E/점검용 `publicAppUrl`과 `originalApiUrl`은 실제 배포 주소와 `/api/notes` 경로를 가리킵니다. 로컬 또는 배포 환경에서 `GET /api/notes`와 타인 메모 접근은 무인증·위조 토큰 요청에서 JSON 401/403으로 거부됩니다. 저장점 검증은 `npm run bundle`로 제출 묶음을 생성하고, 비밀값이나 실제 메모 내용을 포함하지 않도록 관리합니다.
