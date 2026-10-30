@@ -1,0 +1,17 @@
+[
+  {
+    "name": "rapid-login-failures-same-ip",
+    "condition": "같은 출발지 주소에서 짧은 시간 안에 로그인 실패가 연속적으로 쌓이고, 보통 한 계정 또는 소수 계정에 집중됩니다.",
+    "evidence": "MITRE ATT&CK T1110: 무차별 대입은 같은 출발지에서 빠르게 반복된 로그인 실패를 통해 비밀번호 후보를 시도하는 행위로 식별됩니다."
+  },
+  {
+    "name": "same-password-across-accounts",
+    "condition": "여러 계정에 동일한 비밀번호를 연속으로 넣거나, 짧은 간격으로 같은 비밀번호를 시도하는 패턴이 보입니다.",
+    "evidence": "MITRE ATT&CK T1110: 무차별 대입은 여러 계정에 같은 비밀번호를 반복해 넣는 시도를 통해 계정 목록을 탐색하는 형태입니다."
+  },
+  {
+    "name": "high-volume-account-spraying",
+    "condition": "한 주소가 많은 서로 다른 계정에 비슷한 빈도로 실패를 기록하며, 성공이 없는 경우가 많습니다.",
+    "evidence": "MITRE ATT&CK T1110: 무차별 대입은 잠금 회피를 위해 여러 계정에 분산해서 실패를 반복하는 계정 스프레이 행동으로 나타납니다."
+  }
+]

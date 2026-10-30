@@ -1,0 +1,179 @@
+{
+  "schema": "aleph.xdr.result.v1",
+  "moduleKey": "brute-force",
+  "decisions": [
+    {
+      "alertId": "bf-01",
+      "action": "block",
+      "confidence": 0.92,
+      "reason": "rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다."
+    },
+    {
+      "alertId": "bf-02",
+      "action": "block",
+      "confidence": 0.92,
+      "reason": "rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다."
+    },
+    {
+      "alertId": "bf-03",
+      "action": "block",
+      "confidence": 0.92,
+      "reason": "rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다."
+    },
+    {
+      "alertId": "bf-04",
+      "action": "block",
+      "confidence": 0.92,
+      "reason": "rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다."
+    },
+    {
+      "alertId": "bf-05",
+      "action": "block",
+      "confidence": 0.92,
+      "reason": "rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다."
+    },
+    {
+      "alertId": "bf-06",
+      "action": "block",
+      "confidence": 0.99,
+      "reason": "rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다."
+    },
+    {
+      "alertId": "bf-07",
+      "action": "block",
+      "confidence": 0.92,
+      "reason": "rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다."
+    },
+    {
+      "alertId": "bf-08",
+      "action": "block",
+      "confidence": 0.99,
+      "reason": "rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다."
+    },
+    {
+      "alertId": "bf-09",
+      "action": "block",
+      "confidence": 0.92,
+      "reason": "rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다."
+    },
+    {
+      "alertId": "bf-10",
+      "action": "block",
+      "confidence": 0.99,
+      "reason": "rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다."
+    },
+    {
+      "alertId": "bf-11",
+      "action": "alert",
+      "confidence": 0.54,
+      "reason": "rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다."
+    },
+    {
+      "alertId": "bf-12",
+      "action": "alert",
+      "confidence": 0.58,
+      "reason": "rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다."
+    },
+    {
+      "alertId": "bf-13",
+      "action": "alert",
+      "confidence": 0.5,
+      "reason": "rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다."
+    },
+    {
+      "alertId": "bf-14",
+      "action": "alert",
+      "confidence": 0.54,
+      "reason": "rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다."
+    },
+    {
+      "alertId": "bf-15",
+      "action": "alert",
+      "confidence": 0.54,
+      "reason": "rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다."
+    },
+    {
+      "alertId": "bf-16",
+      "action": "alert",
+      "confidence": 0.5,
+      "reason": "rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다."
+    },
+    {
+      "alertId": "bf-17",
+      "action": "alert",
+      "confidence": 0.54,
+      "reason": "rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다."
+    },
+    {
+      "alertId": "bf-18",
+      "action": "alert",
+      "confidence": 0.58,
+      "reason": "rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다."
+    },
+    {
+      "alertId": "bf-19",
+      "action": "alert",
+      "confidence": 0.5,
+      "reason": "rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다."
+    },
+    {
+      "alertId": "bf-20",
+      "action": "record",
+      "confidence": 0.02,
+      "reason": "benign-login-event"
+    },
+    {
+      "alertId": "bf-21",
+      "action": "record",
+      "confidence": 0.02,
+      "reason": "benign-login-event"
+    },
+    {
+      "alertId": "bf-22",
+      "action": "record",
+      "confidence": 0.04,
+      "reason": "benign-login-event"
+    },
+    {
+      "alertId": "bf-23",
+      "action": "record",
+      "confidence": 0.02,
+      "reason": "benign-login-event"
+    },
+    {
+      "alertId": "bf-24",
+      "action": "record",
+      "confidence": 0.02,
+      "reason": "benign-login-event"
+    },
+    {
+      "alertId": "bf-25",
+      "action": "record",
+      "confidence": 0.02,
+      "reason": "benign-login-event"
+    },
+    {
+      "alertId": "bf-26",
+      "action": "record",
+      "confidence": 0.02,
+      "reason": "benign-login-event"
+    },
+    {
+      "alertId": "bf-27",
+      "action": "record",
+      "confidence": 0.02,
+      "reason": "benign-login-event"
+    },
+    {
+      "alertId": "bf-28",
+      "action": "record",
+      "confidence": 0.02,
+      "reason": "benign-login-event"
+    }
+  ],
+  "counts": {
+    "block": 10,
+    "alert": 9,
+    "record": 9
+  }
+}

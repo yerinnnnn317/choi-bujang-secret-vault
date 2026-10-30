@@ -1,0 +1,56 @@
+2026-09-27T01:00:00.000Z	bf-01	block	0.92	rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다.
+2026-09-27T01:00:00.000Z	bf-02	block	0.92	rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다.
+2026-09-27T01:00:00.000Z	bf-03	block	0.92	rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다.
+2026-09-27T01:00:00.000Z	bf-04	block	0.92	rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다.
+2026-09-27T01:00:00.000Z	bf-05	block	0.92	rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다.
+2026-09-27T01:00:00.000Z	bf-06	block	0.99	rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다.
+2026-09-27T01:00:00.000Z	bf-07	block	0.92	rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다.
+2026-09-27T01:00:00.000Z	bf-08	block	0.99	rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다.
+2026-09-27T01:00:00.000Z	bf-09	block	0.92	rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다.
+2026-09-27T01:00:00.000Z	bf-10	block	0.99	rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다.
+2026-09-27T01:00:00.000Z	bf-11	alert	0.54	rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다.
+2026-09-27T01:00:00.000Z	bf-12	alert	0.58	rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다.
+2026-09-27T01:00:00.000Z	bf-13	alert	0.5	rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다.
+2026-09-27T01:00:00.000Z	bf-14	alert	0.54	rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다.
+2026-09-27T01:00:00.000Z	bf-15	alert	0.54	rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다.
+2026-09-27T01:00:00.000Z	bf-16	alert	0.5	rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다.
+2026-09-27T01:00:00.000Z	bf-17	alert	0.54	rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다.
+2026-09-27T01:00:00.000Z	bf-18	alert	0.58	rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다.
+2026-09-27T01:00:00.000Z	bf-19	alert	0.5	rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다.
+2026-09-27T01:00:00.000Z	bf-20	record	0.02	benign-login-event
+2026-09-27T01:00:00.000Z	bf-21	record	0.02	benign-login-event
+2026-09-27T01:00:00.000Z	bf-22	record	0.04	benign-login-event
+2026-09-27T01:00:00.000Z	bf-23	record	0.02	benign-login-event
+2026-09-27T01:00:00.000Z	bf-24	record	0.02	benign-login-event
+2026-09-27T01:00:00.000Z	bf-25	record	0.02	benign-login-event
+2026-09-27T01:00:00.000Z	bf-26	record	0.02	benign-login-event
+2026-09-27T01:00:00.000Z	bf-27	record	0.02	benign-login-event
+2026-09-27T01:00:00.000Z	bf-28	record	0.02	benign-login-event
+2026-10-30T08:18:19.098Z	bf-01	block	0.92	rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다.
+2026-10-30T08:18:19.098Z	bf-02	block	0.92	rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다.
+2026-10-30T08:18:19.098Z	bf-03	block	0.92	rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다.
+2026-10-30T08:18:19.098Z	bf-04	block	0.92	rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다.
+2026-10-30T08:18:19.098Z	bf-05	block	0.92	rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다.
+2026-10-30T08:18:19.098Z	bf-06	block	0.99	rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다.
+2026-10-30T08:18:19.098Z	bf-07	block	0.92	rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다.
+2026-10-30T08:18:19.098Z	bf-08	block	0.99	rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다.
+2026-10-30T08:18:19.098Z	bf-09	block	0.92	rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다.
+2026-10-30T08:18:19.098Z	bf-10	block	0.99	rapid-login-failures-same-ip: 짧은 시간 안에 같은 주소에서 대량 로그인 실패가 누적되어 무차별 대입 공격으로 판단됩니다.
+2026-10-30T08:18:19.098Z	bf-11	alert	0.54	rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다.
+2026-10-30T08:18:19.098Z	bf-12	alert	0.58	rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다.
+2026-10-30T08:18:19.098Z	bf-13	alert	0.5	rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다.
+2026-10-30T08:18:19.098Z	bf-14	alert	0.54	rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다.
+2026-10-30T08:18:19.098Z	bf-15	alert	0.54	rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다.
+2026-10-30T08:18:19.098Z	bf-16	alert	0.5	rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다.
+2026-10-30T08:18:19.098Z	bf-17	alert	0.54	rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다.
+2026-10-30T08:18:19.098Z	bf-18	alert	0.58	rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다.
+2026-10-30T08:18:19.098Z	bf-19	alert	0.5	rapid-login-failures-same-ip: 로그인 실패가 있었지만 이후 성공이 있거나 소규모 반복으로, 공격 의심은 있으나 확실하지는 않습니다.
+2026-10-30T08:18:19.098Z	bf-20	record	0.02	benign-login-event
+2026-10-30T08:18:19.098Z	bf-21	record	0.02	benign-login-event
+2026-10-30T08:18:19.098Z	bf-22	record	0.04	benign-login-event
+2026-10-30T08:18:19.098Z	bf-23	record	0.02	benign-login-event
+2026-10-30T08:18:19.098Z	bf-24	record	0.02	benign-login-event
+2026-10-30T08:18:19.098Z	bf-25	record	0.02	benign-login-event
+2026-10-30T08:18:19.098Z	bf-26	record	0.02	benign-login-event
+2026-10-30T08:18:19.098Z	bf-27	record	0.02	benign-login-event
+2026-10-30T08:18:19.098Z	bf-28	record	0.02	benign-login-event
