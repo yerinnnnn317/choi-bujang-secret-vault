@@ -1,14 +1,16 @@
 {
   "schema": "aleph.defense.submission.v2",
-  "step": 5,
-  "commit": "aad60a185ea7add7efce6ba7ebba6770f4668002",
+  "step": 6,
+  "commit": "52e8f33fcfbe0d85a23eedf4fdafafb769cce278",
   "repoUrl": "https://github.com/yerinnnnn317/choi-bujang-secret-vault",
   "changedFiles": [
     "README.md",
-    "aleph.config.json"
+    "aleph.config.json",
+    "src/decider.mjs"
   ],
   "policyRules": [
-    "starter.deny"
+    "starter.deny",
+    "device_registered"
   ],
   "attackAttempts": [
     {
