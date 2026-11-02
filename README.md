@@ -8,6 +8,13 @@
 
 <!-- 2026-10-28T10:41:41Z final 5-step validation checkpoint -->
 
+## 6단계 확인 순서
+
+1. `npm run decider:test`를 실행해 등록 기기의 정상 요청이 통과하는지 확인합니다.
+2. 같은 명령에서 미등록 기기의 가상 요청이 `deny`와 `reasonCode: "device_not_registered"`로 나오는지 확인합니다.
+3. 이 연습은 로컬 시뮬레이션이며, 실제 심판의 미등록 기기 공격 차단은 운영 엔진이 별도로 검증합니다.
+4. `src/decider.mjs`는 요청 규격을 기준으로만 판단하고, `request.role`, `request.identity`, `request.device` 같은 임의 값은 읽지 않습니다.
+
 ## 5단계 저장점
 
 현재 기능은 사용자 로그인 검증, 본인 메모 목록 조회, 추가·수정·삭제, 타인 메모 차단, 그리고 원본 자료 API URL 메타 기록을 함께 유지하는 상태입니다. `aleph.config.json`의 `step`은 5이며 E2E/점검용 `publicAppUrl`과 `originalApiUrl`은 실제 배포 주소와 `/api/notes` 경로를 가리킵니다. 로컬 또는 배포 환경에서 `GET /api/notes`와 타인 메모 접근은 무인증·위조 토큰 요청에서 JSON 401/403으로 거부됩니다. 저장점 검증은 `npm run bundle`로 제출 묶음을 생성하고, 비밀값이나 실제 메모 내용을 포함하지 않도록 관리합니다.
