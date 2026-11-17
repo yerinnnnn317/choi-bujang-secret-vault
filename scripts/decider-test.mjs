@@ -24,10 +24,26 @@ export async function checkDecider({ decide, ruleIds }) {
     throw new Error('6단계 device_registered 규칙을 먼저 구현하고 RULE_IDS에 적어 주세요.');
   }
   const { normal, suspicious } = fixtureRequests();
+  const { recentEvents: _recentEvents, ...withoutRecentEvents } = normal;
   const checks = [
     { name: '등록 기기의 정상 요청', request: normal, decision: 'allow' },
+    { name: '평소 시각의 대량 읽기', request: { ...suspicious, requestId: randomUUID(),
+      signals: { ...suspicious.signals, hour: 14 } }, decision: 'allow' },
+    { name: '익숙한 네트워크의 대량 읽기', request: { ...suspicious, requestId: randomUUID(),
+      signals: { ...suspicious.signals, network: 'usual' } }, decision: 'allow' },
+    { name: '지역만 다른 요청', request: { ...normal, requestId: randomUUID(),
+      signals: { ...normal.signals, region: 'foreign' } }, decision: 'allow' },
     { name: '미등록 기기의 가상 요청', request: { ...normal, requestId: randomUUID(),
       deviceRegistered: false }, decision: 'deny', reasonCode: 'device_not_registered' },
+    { name: '위조 클라이언트 헤더', request: { ...normal, requestId: randomUUID(),
+      headers: { 'x-forwarded-for': 'foreign' } }, decision: 'deny' },
+    { name: '출처가 불명확한 신호', request: { ...normal, requestId: randomUUID(),
+      signals: { ...normal.signals, source: 'client_header' } }, decision: 'deny' },
+    { name: '출처와 맞지 않는 접속 정보', request: { ...normal, requestId: randomUUID(),
+      signals: { source: 'none', region: 'foreign', network: 'unusual', hour: 3 } },
+    decision: 'deny' },
+    { name: '행동 데이터 누락', request: { ...withoutRecentEvents, requestId: randomUUID() },
+      decision: 'deny' },
   ];
   if (ruleIds.includes('step_up_required')) {
     checks.push(
