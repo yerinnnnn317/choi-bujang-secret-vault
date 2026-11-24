@@ -19,7 +19,6 @@ function hasExactKeys(value, keys) {
 
 function hasKnownSignalSource(signals) {
   if (!signals || typeof signals !== 'object' || Array.isArray(signals)
-      || Object.keys(signals).some(key => !['source', 'region', 'network', 'hour'].includes(key))
       || !Object.prototype.hasOwnProperty.call(signals, 'source')
       || !Object.prototype.hasOwnProperty.call(signals, 'region')
       || !Object.prototype.hasOwnProperty.call(signals, 'network')) {
@@ -39,13 +38,14 @@ function hasKnownSignalSource(signals) {
   if (source === 'judge_fixture') {
     if (typeof region !== 'string' || region.length === 0) return false;
     if (typeof network !== 'string' || network.length === 0) return false;
-    if (!Number.isInteger(hour) || hour < 0 || hour > 23) return false;
+    // 시각이 없으면 확인 불가로 두고(정상값으로 채우지 않음) 평소와 다른 시각 신호로도 쓰지 않는다.
+    if (hour !== undefined && hour !== null && (!Number.isInteger(hour) || hour < 0 || hour > 23)) return false;
     return true;
   }
 
   if (source === 'none') {
+    // 실제 경로(none)에서는 지역·네트워크를 알 수 없다. 다른 값이 오면 출처와 맞지 않으므로 거부한다.
     if (region !== 'unknown' || network !== 'unknown') return false;
-    if (hour !== undefined && hour !== null) return false;
     return true;
   }
 
@@ -57,7 +57,8 @@ function hasValidStepUp(stepUp) {
     return false;
   }
   if (stepUp.verified === false) {
-    return stepUp.authAgeSeconds === null;
+    return stepUp.authAgeSeconds === null
+      || (Number.isInteger(stepUp.authAgeSeconds) && stepUp.authAgeSeconds >= 0);
   }
   return Number.isInteger(stepUp.authAgeSeconds)
     && stepUp.authAgeSeconds >= 0 && stepUp.authAgeSeconds <= 900;
@@ -65,10 +66,11 @@ function hasValidStepUp(stepUp) {
 
 function hasValidRecentEvents(recentEvents) {
   return Array.isArray(recentEvents) && recentEvents.length <= 12
-    && recentEvents.every(event => hasExactKeys(event, EVENT_KEYS)
+    && recentEvents.every(event => event && typeof event === 'object' && !Array.isArray(event)
+      && EVENT_KEYS.every(key => Object.prototype.hasOwnProperty.call(event, key))
       && typeof event.kind === 'string' && event.kind.length > 0
       && Number.isFinite(event.ageSeconds) && event.ageSeconds >= 0
-      && Number.isInteger(event.count) && event.count >= 0);
+      && Number.isFinite(event.count) && event.count >= 0);
 }
 
 function hasRiskyAccessPattern(request) {
@@ -104,11 +106,15 @@ function isUnfamiliarNetwork(network) {
   return typeof network === 'string' && network.length > 0 && !FAMILIAR_NETWORKS.has(network);
 }
 
-// 갑작스러운 다량 읽기: 최근 5분 안의 읽기 사건 건수를 합쳐 10건을 넘으면 다량 읽기로 본다.
-const BULK_READ_WINDOW_SECONDS = 300;
+// 갑작스러운 다량 읽기: 최근 10분 안의 읽기 사건 건수를 합쳐 10건을 넘으면 다량 읽기로 본다.
+const BULK_READ_WINDOW_SECONDS = 600;
 const BULK_READ_THRESHOLD = 10;
+// 읽기 계열(read·download·export·list·view·fetch·get)만 센다. 수정·삭제 계열은 읽기로 세지 않는다.
 function isReadKind(kind) {
-  return typeof kind === 'string' && /(^|_)read(_|$)|^read/u.test(kind);
+  if (typeof kind !== 'string') return false;
+  const k = kind.toLowerCase();
+  return /read|download|export|list|view|fetch|get/u.test(k)
+    && !/write|update|delete|modif|create|edit|insert|put|post|patch/u.test(k);
 }
 function hasSuddenBulkRead(recentEvents) {
   if (!Array.isArray(recentEvents)) return false;
