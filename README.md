@@ -1,6 +1,24 @@
-# BYTE BACK 방어전 2~9단계
+# BYTE BACK 방어전 2~10단계
 
 1단계에서 공개했던 네 건의 메모는 모두 가상 자료입니다. 2단계에서는 Supabase 학습 테이블로 옮겼고, 3단계에서는 Auth 로그인과 메모 CRUD를, 4단계에서는 단건 메모 소유자 검사를 연결했습니다. 5단계 저장점에서는 배포 URL과 원본 API 주소를 함께 기록하고, 인증된 사용자별 자료 보안 검증을 유지합니다. 실제 학생 자료, 토큰, 비밀키를 넣지 마세요.
+
+## 10단계 저장점
+
+**안전 정책 사본(만들기 1·2).** 1~9단계 접근 규칙(`src/decider.mjs`, `aleph.config.json`의 `allowedRoutes`, DB 접근 정책 `supabase/step-2-training-notes.sql`)을 안전 정책으로 정하고 `backup/policy/`에 사본과 SHA-256 해시(`manifest.json`, 버전 `safe-policy-step9-d33f597`)를 두었습니다. `npm run policy:simulate`는 시험 사본(`backup/policy-test/`)의 판정기 규칙 한 줄을 바꿔 메모 전체 목록(`GET /notes`)을 허용하는 침공을 흉내 내고, `npm run policy:diff`는 검증한 사본과의 차이만 보여 줍니다. `npm run policy:restore`는 복원할 버전과 바뀔 줄을 먼저 보여 주고, `-- --yes`를 붙여야 바뀐 파일만 되돌립니다. 사본이 없거나 해시가 맞지 않으면 중단하며, 실제 운영 정책 파일은 바꾸지 않습니다. 모든 작업은 `backup/audit-log.jsonl`에 덧붙여 기록합니다. `npm run policy:check`는 되돌린 시험 정책에서 B의 다른 사람 메모 목록 요청은 거부, A의 메모 하나 조회는 허용되는지 확인합니다.
+
+**메모 한 건 복원(만들기 3).**
+- 복원 대상(시험 계정 B의 가상 메모): ID `20000000-0000-4000-8000-0000000000b1`
+- 서비스·경로: 자료 API 서비스 `notes`, 복원 경로 `POST /api/restore/notes/:id` (`aleph.config.json`의 `restoreRoute`)
+- 비공개 사본: 메모를 `POST /api/notes`로 처음 만들 때 서버가 서버 전용 표 `training_notes_backup`에 ID·소유자·제목·내용·내용 해시(제목과 내용의 SHA-256)를 남깁니다. 같은 ID는 처음 사본만 유지하므로 뒤에 변조된 내용으로 덮어쓰지 않습니다. 사본은 공개 저장소가 아니라 DB의 서버 전용 표에만 있습니다.
+- 복원 절차: 로그인 토큰 검증 → 사본을 다시 읽어 내용 해시 검증 → 사본 소유자와 로그인 사용자 대조 → 현재 행이 다른 소유자면 중단 → 그 한 건만 되돌림(변조는 제목·내용만, 삭제는 같은 ID·소유자로 다시 넣음) → 다시 읽어 ID·소유자·내용 해시가 사본과 같은지 확인. 다른 메모는 건드리지 않고, 결과는 `training_notes_restore_audit`에 덧붙이기만 합니다.
+- 시험 계정 B로 확인하는 방법: B로 `POST /api/notes`에 `id: "20000000-0000-4000-8000-0000000000b1"`로 메모를 만든 뒤 변조(`PUT`)나 삭제(`DELETE`)하고 `POST /api/restore/notes/20000000-0000-4000-8000-0000000000b1`를 호출합니다. 토큰이 없으면 `401`, 다른 사용자는 `403 RESTORE_FORBIDDEN`, 사본이 없으면 `404`, 사본 해시가 맞지 않으면 `409`입니다.
+- 준비: Supabase SQL Editor에서 `supabase/step-10-note-backup.sql`을 한 번 실행해야 두 표가 생깁니다. 브라우저(anon·authenticated)는 두 표에 접근할 수 없습니다.
+
+**복구 뒤 다시 확인하는 순서(만들기 4).** 실행하지 않은 시험은 미실행으로 적습니다.
+1. 정책: `npm run policy:diff`(차이 없음) → `npm run policy:check`(B의 목록 요청 거부, A 정상 요청 허용). 로컬 시험 정책 결과이며 운영 반영 증거가 아닙니다.
+2. 판정기 1~9단계: `npm run decider:test`(6·7단계 11건), `npm run fixture:7`(정상 `allow`, 복합 이상 `step_up`), `npm run detect:test`(9단계 6건).
+3. 배포 자료 API: `npm run bundle`이 비로그인·위조 토큰 메모 목록, 비로그인 공지 수정, 비로그인 복원 요청이 JSON `401`/`403`으로 거부되는지 실제 배포 주소에서 점검합니다.
+4. 로그인이 필요한 재시험(A가 B 메모 조회·수정·목록, B의 공지 수정, 복원 직후 1~9단계 대표 공격)은 시험 계정 토큰이 필요해 자기 점검에서는 **미실행**이며, 심판이 확인합니다. 로컬 가짜 DB로는 변조·삭제 복원, A의 B 메모 조회 `403`, B 자신의 정상 조회 `200`을 확인했습니다.
 
 ## 9단계 저장점
 

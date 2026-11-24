@@ -1,0 +1,3 @@
+{"at":"2026-11-24T07:53:28.104Z","action":"snapshot","version":"safe-policy-step9-d33f597","files":[{"name":"decider.mjs","sha256":"c64177c4d49e793bef25fa01f6da5497afbfe3ba05897bc6b0bd348bb25fb04a"},{"name":"allowedRoutes.json","sha256":"f76eb5bb538d54de153d8955d7b1fa61a695a9835511834d761f4864b6e97083"},{"name":"db-policy.sql","sha256":"f9e7b0c2a90f50e4ac0e263ea1f834063529de7b71b836507c7051ffbefdc47c"}]}
+{"at":"2026-11-24T07:53:42.709Z","action":"simulate","from":"safe-policy-step9-d33f597","file":"decider.mjs","description":"판정기 구역 규칙 한 줄을 바꿔 ID 없는 메모 전체 목록 경로(GET /notes)를 허용"}
+{"at":"2026-11-24T07:58:00.392Z","action":"restore","to":"safe-policy-step9-d33f597","files":[{"name":"decider.mjs","lines":2}]}

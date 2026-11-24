@@ -53,6 +53,13 @@ export async function runAttackChecks(config) {
     signal: AbortSignal.timeout(10000),
   });
   const announcementWriteDenied = await isJsonAuthDenial(announcementWriteResponse);
+  // 10단계: 로그인하지 않은 복원 요청은 어떤 메모도 되돌리지 못해야 한다(대상 ID는 README의 가상 메모).
+  const restoreResponse = await fetch(new URL('/api/restore/notes/20000000-0000-4000-8000-0000000000b1', app), {
+    method: 'POST',
+    redirect: 'error',
+    signal: AbortSignal.timeout(10000),
+  });
+  const restoreDenied = await isJsonAuthDenial(restoreResponse);
   return [
     {
       attackId: 'anonymous_note_read',
@@ -74,6 +81,13 @@ export async function runAttackChecks(config) {
       observed: announcementWriteDenied
         ? `${localCheck ? '로컬 ' : ''}비로그인 공지 수정 요청이 JSON으로 거부됨 (HTTP ${announcementWriteResponse.status})`
         : `${localCheck ? '로컬 ' : ''}비로그인 공지 수정 요청이 JSON 401/403으로 거부되지 않음 (HTTP ${announcementWriteResponse.status})`,
+    },
+    {
+      attackId: 'anonymous_note_restore',
+      expected: '토큰 없는 POST /api/restore/notes/:id 요청은 JSON 401 또는 403이어야 함',
+      observed: restoreDenied
+        ? `${localCheck ? '로컬 ' : ''}비로그인 복원 요청이 JSON으로 거부됨 (HTTP ${restoreResponse.status})`
+        : `${localCheck ? '로컬 ' : ''}비로그인 복원 요청이 JSON 401/403으로 거부되지 않음 (HTTP ${restoreResponse.status})`,
     },
   ];
 }

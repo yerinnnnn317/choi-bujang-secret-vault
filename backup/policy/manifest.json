@@ -1,0 +1,23 @@
+{
+  "version": "safe-policy-step9-d33f597",
+  "basedOnCommit": "d33f597f028bd915ae78a97bdfd8758f90114997",
+  "createdAt": "2026-11-24T07:53:28.102Z",
+  "note": "1~9단계 접근 규칙의 검증한 안전 정책 사본. 해시는 줄바꿈을 LF로 통일한 내용의 SHA-256.",
+  "files": [
+    {
+      "name": "decider.mjs",
+      "source": "src/decider.mjs",
+      "sha256": "c64177c4d49e793bef25fa01f6da5497afbfe3ba05897bc6b0bd348bb25fb04a"
+    },
+    {
+      "name": "allowedRoutes.json",
+      "source": "aleph.config.json#allowedRoutes",
+      "sha256": "f76eb5bb538d54de153d8955d7b1fa61a695a9835511834d761f4864b6e97083"
+    },
+    {
+      "name": "db-policy.sql",
+      "source": "supabase/step-2-training-notes.sql",
+      "sha256": "f9e7b0c2a90f50e4ac0e263ea1f834063529de7b71b836507c7051ffbefdc47c"
+    }
+  ]
+}

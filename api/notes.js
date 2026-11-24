@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import config from '../aleph.config.json' with { type: 'json' };
 import { createLoginVerifier } from '../src/verify-login.mjs';
 import { resourceId } from '../src/resources.mjs';
+import { noteContentSha256 } from '../src/note-backup.mjs';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 let verifyLoginAuthorization;
@@ -178,6 +179,31 @@ export default async function handler(request, response) {
     return apiError(response, 502, 'NOTES_UNAVAILABLE');
   }
   if (request.method === 'POST') {
+    // 10단계: 처음 만든 메모의 비공개 사본을 서버 전용 표에 남긴다(같은 ID는 처음 사본만 유지).
+    // 사본 저장에 실패해도 메모 생성은 그대로 두고, 복원 경로가 사본 없음으로 멈춘다.
+    try {
+      const backupUrl = new URL('/rest/v1/training_notes_backup', baseUrl);
+      backupUrl.searchParams.set('on_conflict', 'id');
+      await fetch(backupUrl, {
+        method: 'POST',
+        headers: {
+          apikey: secretKey,
+          Authorization: 'Bearer ' + secretKey,
+          'Content-Type': 'application/json',
+          Prefer: 'resolution=ignore-duplicates,return=minimal',
+        },
+        body: JSON.stringify({
+          id: body.id,
+          owner_id: body.owner_id,
+          title: body.title,
+          content: body.content,
+          content_sha256: noteContentSha256(body.title, body.content),
+        }),
+        cache: 'no-store',
+      });
+    } catch {
+      // 사본 저장 실패는 응답에 섞지 않는다.
+    }
     return response.status(201).json({ id: body.id, resourceId: resourceId('note', body.id) });
   }
 
