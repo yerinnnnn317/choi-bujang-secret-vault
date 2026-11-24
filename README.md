@@ -1,6 +1,18 @@
-# BYTE BACK 방어전 2~10단계
+# BYTE BACK 방어전 2~11단계
 
 1단계에서 공개했던 네 건의 메모는 모두 가상 자료입니다. 2단계에서는 Supabase 학습 테이블로 옮겼고, 3단계에서는 Auth 로그인과 메모 CRUD를, 4단계에서는 단건 메모 소유자 검사를 연결했습니다. 5단계 저장점에서는 배포 URL과 원본 API 주소를 함께 기록하고, 인증된 사용자별 자료 보안 검증을 유지합니다. 실제 학생 자료, 토큰, 비밀키를 넣지 마세요.
+
+## 11단계 저장점
+
+**설치형 웹앱(만들기 1).** 지금 배포 중인 자료실 화면(`public/index.html`)에 설치형 웹앱 설정 `public/manifest.webmanifest`(앱 이름 「BYTE BACK 내 자료실」, `display: standalone`, 아이콘 `public/icon.svg`)과 오프라인 안내(`public/offline.html`, 화면 상단 오프라인 표시)를 붙였습니다. 서비스 워커(`public/sw.js`)는 화면 이동이 실패할 때만 오프라인 안내를 보여 주며 `/api` 요청·자료·토큰·기기 키는 저장하거나 가로채지 않습니다. 화면에는 기기 승인 상태를 표시하고, 앱을 설치했다는 것만으로 기기 확인이 끝나지 않는다고 적었습니다. 따로 설치하는 접속 프로그램은 없습니다.
+
+**기기 승인(만들기 2).** 로그인한 뒤 「이 기기 승인 요청」을 누르면 브라우저가 이번 접속의 메모리에만 기기 키(ECDSA P-256, 개인키는 꺼낼 수 없음)를 만들고, 「승인 버전·로그인 사용자·시각」에 서명한 증명과 공개키를 `POST /api/device/approve`로 보냅니다. 서버는 로그인 토큰과 키 소유 서명을 직접 확인한 뒤에만 서버 전용 표 `device_approvals`에 기기 공개키를 등록합니다(다른 계정의 기기·회수된 기기는 다시 승인하지 않음). 화면은 같은 기기로 서명한 `GET /api/device/status`가 `registered: true`일 때만 자료실(메모 목록·편집기)을 엽니다. 승인 전에는 자료를 표시하지 않습니다.
+
+**요청 서명.** 보호 자료 API(`/api/notes`, `/api/notes/:id`, `/api/announcements`, `/api/announcements/:id`, `POST /api/restore/notes/:id`)는 로그인 토큰 확인 뒤 승인된 기기의 서명을 확인합니다. 서명 대상은 `aleph-device-v1`·메서드·경로(쿼리 포함)·시각(2분 이내)·본문 SHA-256이며 헤더는 `X-Device-Id`·`X-Device-Timestamp`·`X-Device-Signature`입니다. 서명이 없으면 `403 DEVICE_SIGNATURE_REQUIRED`, 서명 뒤 경로·메서드·본문이 바뀌면 `403 SIGNATURE_MISMATCH`, 시각이 맞지 않으면 `403 SIGNATURE_EXPIRED`, 이 계정의 승인 기기가 아니면 `403 DEVICE_NOT_APPROVED`입니다. 토큰이 없으면 지금처럼 `401`입니다. 기존 소유자 검사·공지 쓰기 금지·복원 검증은 서명 확인 뒤 그대로 적용됩니다.
+
+**저장하지 않는 것.** 로그인 정보는 메모리에만 두고(`persistSession: false`) 기기 키와 토큰을 localStorage·sessionStorage·IndexedDB에 넣지 않습니다. 그래서 새로고침하면 다시 로그인하고 승인해야 합니다. 서버는 기기 공개키만 저장합니다.
+
+**준비와 다시 확인하는 방법.** Supabase SQL Editor에서 `supabase/step-11-devices.sql`을 한 번 실행해 `device_approvals` 표를 만듭니다. 배포 뒤 앱 주소에서 로그인 → 자료가 보이지 않는지 확인 → 「이 기기 승인 요청」 → 승인 표시와 함께 기존 메모 화면이 열리는지 확인합니다. `npm run bundle`은 비로그인 메모 목록·위조 토큰·비로그인 공지 수정·비로그인 복원·비로그인 기기 승인 요청이 JSON `401`/`403`으로 거부되는지 배포 주소에서 점검합니다. 서명 없는 요청·경로 변경·본문 변경의 거부는 로컬 가짜 DB로 확인했고(각 `403`), 실제 배포에서 로그인 토큰이 필요한 서명 시험은 자기 점검에서 **미실행**이며 심판이 확인합니다.
 
 ## 10단계 저장점
 

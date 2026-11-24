@@ -2,6 +2,7 @@ import config from '../../../aleph.config.json' with { type: 'json' };
 import { createLoginVerifier } from '../../../src/verify-login.mjs';
 import { resourceId } from '../../../src/resources.mjs';
 import { noteContentSha256 } from '../../../src/note-backup.mjs';
+import { checkDeviceSignature, createDeviceStore } from '../../../src/device-signature.mjs';
 
 // 10단계 복원 경로: POST /api/restore/notes/:id
 // 비공개 사본(training_notes_backup)에서 메모 한 건만 되돌린다. 다른 메모와 감사 기록은 건드리지 않는다.
@@ -63,6 +64,9 @@ export default async function handler(request, response) {
     identity = null;
   }
   if (!identity) return apiError(response, 401, 'UNAUTHORIZED', '로그인 토큰을 확인할 수 없습니다.');
+  // 11단계: 보호 요청은 승인된 기기의 서명이 있어야 한다(서명 없음·경로/본문 변경·미승인 기기는 403).
+  const deviceCheck = await checkDeviceSignature(request, identity, createDeviceStore(baseUrl, secretKey));
+  if (!deviceCheck.ok) return apiError(response, deviceCheck.status, deviceCheck.error, deviceCheck.message);
 
   const headers = { apikey: secretKey, Authorization: 'Bearer ' + secretKey };
   const rest = async (path, params, init = {}) => {

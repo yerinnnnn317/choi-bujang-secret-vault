@@ -29,14 +29,22 @@
     li span { color: #bfd0e5; }
     .note-actions { display: flex; gap: 8px; margin-top: 14px; }
     .note-actions button { padding: 7px 12px; border: 1px solid #71869d; border-radius: 8px; color: #ecf4ff; background: #101a28; cursor: pointer; }
+    .device-panel { border-color: #8ad8df; }
+    .device-state { font-weight: 700; color: #ffe3a8; }
+    .device-state.ok { color: #9cf0c0; }
+    #offline-banner { margin: 0 0 18px; padding: 12px 16px; border: 1px solid #d0a873; border-radius: 12px; color: #ffe9c7; background: #5a442433; }
   </style>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#101a28">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
 </head>
 <body>
   <main>
-    <div class="eyebrow">BYTE BACK · 3단계 로그인 보호</div>
+    <p id="offline-banner" role="status" hidden>지금 오프라인입니다. 자료는 네트워크에 연결되고 서버가 이 기기를 확인한 뒤에만 다시 표시됩니다.</p>
+    <div class="eyebrow">BYTE BACK · 11단계 기기 승인 접속 앱</div>
     <h1>점령된 자료실</h1>
     <p>Supabase의 학습용 가상 자료를 서버 함수를 통해 불러옵니다. 서버 비밀키는 브라우저에 전달되지 않습니다.</p>
-    <div class="notice">가상 자료는 Supabase Auth에 로그인한 뒤에만 자료 API에서 불러옵니다.</div>
+    <div class="notice">가상 자료는 로그인하고, 서버가 이 기기를 승인된 기기로 확인한 뒤에만 자료 API에서 불러옵니다. 앱을 설치했다는 것만으로는 기기 확인이 끝나지 않습니다.</div>
     <section class="auth-panel" aria-labelledby="auth-heading">
       <h2 id="auth-heading">자료실 로그인</h2>
       <p id="auth-status" role="status">로그인 상태를 확인하는 중입니다.</p>
@@ -54,6 +62,12 @@
       </div>
       <p id="auth-error" role="alert" hidden></p>
     </section>
+    <section id="device-panel" class="auth-panel device-panel" aria-labelledby="device-heading" hidden>
+      <h2 id="device-heading">기기 승인</h2>
+      <p id="device-status" class="device-state" role="status">이 기기는 아직 승인되지 않았습니다. 승인 전에는 자료를 표시하지 않습니다.</p>
+      <p>승인 요청을 보내면 이 브라우저가 이번 접속에서만 쓰는 기기 키를 메모리에 만들고, 서버가 로그인과 키 소유 서명을 확인해 등록합니다. 기기 키와 로그인 토큰은 브라우저 저장소에 넣지 않으므로 새로고침하면 다시 로그인하고 승인해야 합니다.</p>
+      <button id="device-approve" type="button">이 기기 승인 요청</button>
+    </section>
     <section id="note-editor" class="auth-panel" aria-labelledby="note-editor-heading" hidden>
       <h2 id="note-editor-heading">가상 메모 추가</h2>
       <form id="note-form">
@@ -67,14 +81,16 @@
         <button id="cancel-edit" type="button" hidden>수정 취소</button>
       </form>
     </section>
-    <ul id="notes" aria-live="polite"><li>가상 자료를 불러오는 중입니다.</li></ul>
+    <ul id="notes" aria-live="polite"><li>로그인하고 이 기기가 승인되면 가상 자료를 표시합니다.</li></ul>
   </main>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2?bundle';
 
+    // 11단계: 로그인 정보는 메모리에만 둔다(브라우저 저장소에 넣지 않음).
     const supabase = createClient(
       'https://dwzmqgcwolnzbrbtevoa.supabase.co',
       'sb_publishable_86ceYIRvat3BR4-LG7uHlA_j7_O2NI0',
+      { auth: { persistSession: false, autoRefreshToken: true, detectSessionInUrl: false } },
     );
     const authStatus = document.querySelector('#auth-status');
     const loginForm = document.querySelector('#login-form');
@@ -85,12 +101,50 @@
     const noteForm = document.querySelector('#note-form');
     const noteFormButton = noteForm.querySelector('button[type="submit"]');
     const cancelEditButton = document.querySelector('#cancel-edit');
-    let activeNotesToken = null;
+    const devicePanel = document.querySelector('#device-panel');
+    const deviceStatus = document.querySelector('#device-status');
+    const deviceApprove = document.querySelector('#device-approve');
+    const offlineBanner = document.querySelector('#offline-banner');
     let currentSession = null;
     let editingNoteId = null;
+    // 기기 키: 이번 접속의 메모리에만 있다. 개인키는 꺼낼 수 없게(extractable: false) 만든다.
+    let device = null;
+    let deviceApproved = false;
+    let loadGeneration = 0;
+
+    const encoder = new TextEncoder();
+    const hex = buffer => [...new Uint8Array(buffer)].map(b => b.toString(16).padStart(2, '0')).join('');
+    const base64url = buffer => btoa(String.fromCharCode(...new Uint8Array(buffer)))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const sha256Hex = async text => hex(await crypto.subtle.digest('SHA-256', encoder.encode(text)));
+
+    async function signText(text) {
+      return base64url(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, device.privateKey, encoder.encode(text)));
+    }
+
+    // 보호 요청마다 "버전·메서드·경로·시각·본문 해시"에 서명한다. 서명한 뒤 경로나 본문이 바뀌면 서버가 거부한다.
+    async function signedFetch(path, { method = 'GET', body } = {}) {
+      if (!currentSession?.access_token) throw new Error('로그인이 필요합니다.');
+      if (!device) throw new Error('이 기기는 아직 승인되지 않았습니다.');
+      const text = body === undefined ? '' : JSON.stringify(body);
+      const timestamp = String(Date.now());
+      const message = ['aleph-device-v1', method, path, timestamp, await sha256Hex(text)].join('\n');
+      return fetch(path, {
+        method,
+        headers: {
+          Authorization: 'Bearer ' + currentSession.access_token,
+          'X-Device-Id': device.id,
+          'X-Device-Timestamp': timestamp,
+          'X-Device-Signature': await signText(message),
+          ...(body === undefined ? {} : { 'Content-Type': 'application/json' }),
+        },
+        ...(body === undefined ? {} : { body: text }),
+        cache: 'no-store',
+      });
+    }
 
     function showAuthError(error) {
-      authError.textContent = error.message || '로그인 요청을 처리하지 못했습니다.';
+      authError.textContent = error.message || '요청을 처리하지 못했습니다.';
       authError.hidden = false;
     }
 
@@ -103,15 +157,40 @@
       }
     }
 
+    function showListMessage(text) {
+      const item = document.createElement('li');
+      item.textContent = text;
+      list.replaceChildren(item);
+    }
+
+    function setDeviceState(approved, text) {
+      deviceApproved = approved;
+      deviceStatus.textContent = text;
+      deviceStatus.classList.toggle('ok', approved);
+      // 서버가 등록 기기로 확인한 뒤에만 자료실(편집기·목록)을 연다.
+      noteEditor.hidden = !(currentSession && approved);
+      deviceApprove.hidden = approved;
+      if (!approved) {
+        resetNoteForm();
+        showListMessage(currentSession
+          ? '이 기기가 승인되기 전에는 자료를 표시하지 않습니다.'
+          : '로그인하고 이 기기가 승인되면 가상 자료를 표시합니다.');
+      }
+    }
+
     function updateAuthState(session) {
+      const changedUser = currentSession?.user?.id !== session?.user?.id;
       currentSession = session;
       loginForm.hidden = Boolean(session);
       signedIn.hidden = !session;
-      noteEditor.hidden = !session;
+      devicePanel.hidden = !session;
       authStatus.textContent = session
         ? `${session.user.email} 계정으로 로그인되어 있습니다.`
         : '로그아웃 상태입니다.';
-      if (!session) resetNoteForm();
+      if (!session || changedUser) {
+        device = null;
+        setDeviceState(false, '이 기기는 아직 승인되지 않았습니다. 승인 전에는 자료를 표시하지 않습니다.');
+      }
     }
 
     function resetNoteForm() {
@@ -122,23 +201,50 @@
       cancelEditButton.hidden = true;
     }
 
-    async function loadNotes(session) {
-      const token = session?.access_token;
-      if (!token) {
-        activeNotesToken = null;
-        const item = document.createElement('li');
-        item.textContent = '로그인하면 가상 자료를 확인할 수 있습니다.';
-        list.replaceChildren(item);
-        return;
-      }
-      if (token === activeNotesToken) return;
-      activeNotesToken = token;
-
+    // 승인 요청: 기기 키를 메모리에 만들고, "승인 버전·로그인 사용자·시각"에 서명해 공개키와 함께 보낸다.
+    // 서버가 서명을 확인해 등록한 뒤, 다시 서명한 상태 확인 요청이 registered: true 일 때만 승인으로 표시한다.
+    deviceApprove.addEventListener('click', async () => {
+      if (!currentSession?.access_token) return;
+      deviceApprove.disabled = true;
+      authError.hidden = true;
+      deviceStatus.textContent = '서버에 기기 승인을 요청하는 중입니다.';
       try {
-        const response = await fetch('/api/notes', {
-          headers: { Authorization: `Bearer ${token}` },
+        const keyPair = await crypto.subtle.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign', 'verify']);
+        const jwk = await crypto.subtle.exportKey('jwk', keyPair.publicKey);
+        const publicKeyJwk = { crv: jwk.crv, kty: jwk.kty, x: jwk.x, y: jwk.y };
+        const signedAt = String(Date.now());
+        const proof = base64url(await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, keyPair.privateKey,
+          encoder.encode(['aleph-device-approve-v1', currentSession.user.id, signedAt].join('\n'))));
+        const approveResponse = await fetch('/api/device/approve', {
+          method: 'POST',
+          headers: { Authorization: 'Bearer ' + currentSession.access_token, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ publicKeyJwk, signedAt, signature: proof }),
           cache: 'no-store',
         });
+        if (!approveResponse.ok) throw new Error(await apiErrorMessage(approveResponse, '기기 승인을 받지 못했습니다.'));
+        const approved = await approveResponse.json();
+        device = { id: approved.deviceId, privateKey: keyPair.privateKey };
+        const statusResponse = await signedFetch('/api/device/status');
+        const status = statusResponse.ok ? await statusResponse.json() : null;
+        if (!status?.registered) {
+          device = null;
+          throw new Error('서버가 이 기기를 등록 기기로 확인하지 못했습니다.');
+        }
+        setDeviceState(true, `서버가 이 기기(${status.deviceId})를 승인된 기기로 확인했습니다.`);
+        await loadNotes();
+      } catch (error) {
+        setDeviceState(false, '이 기기는 승인되지 않았습니다. 승인 전에는 자료를 표시하지 않습니다.');
+        showAuthError(error);
+      } finally {
+        deviceApprove.disabled = false;
+      }
+    });
+
+    async function loadNotes() {
+      if (!currentSession?.access_token || !deviceApproved) return;
+      const generation = ++loadGeneration;
+      try {
+        const response = await signedFetch('/api/notes');
         if (!response.ok) {
           throw new Error(await apiErrorMessage(response, '자료를 불러올 수 없습니다.'));
         }
@@ -148,11 +254,9 @@
               || typeof note.title !== 'string' || typeof note.body !== 'string')) {
           throw new Error('자료 형식이 맞지 않습니다.');
         }
-        if (token !== activeNotesToken) return;
+        if (generation !== loadGeneration || !deviceApproved) return;
         if (data.length === 0) {
-          const item = document.createElement('li');
-          item.textContent = '아직 추가한 메모가 없습니다.';
-          list.replaceChildren(item);
+          showListMessage('아직 추가한 메모가 없습니다.');
           return;
         }
         list.replaceChildren(...data.map(note => {
@@ -183,17 +287,12 @@
             deleteButton.disabled = true;
             authError.hidden = true;
             try {
-              const deleteResponse = await fetch(`/api/notes/${encodeURIComponent(note.id)}`, {
-                method: 'DELETE',
-                headers: { Authorization: `****** },
-                cache: 'no-store',
-              });
+              const deleteResponse = await signedFetch(`/api/notes/${encodeURIComponent(note.id)}`, { method: 'DELETE' });
               if (!deleteResponse.ok) {
                 throw new Error(await apiErrorMessage(deleteResponse, '메모를 삭제하지 못했습니다.'));
               }
               if (editingNoteId === note.id) resetNoteForm();
-              activeNotesToken = null;
-              await loadNotes(currentSession);
+              await loadNotes();
             } catch (error) {
               showAuthError(error);
               deleteButton.disabled = false;
@@ -204,10 +303,8 @@
           return item;
         }));
       } catch (error) {
-        if (token !== activeNotesToken) return;
-        const item = document.createElement('li');
-        item.textContent = error.message;
-        list.replaceChildren(item);
+        if (generation !== loadGeneration) return;
+        showListMessage(error.message);
       }
     }
 
@@ -215,14 +312,11 @@
       const { data: { session }, error } = await supabase.auth.getSession();
       if (error) throw error;
       updateAuthState(session);
-      await loadNotes(session);
       supabase.auth.onAuthStateChange((_event, nextSession) => {
         updateAuthState(nextSession);
-        void loadNotes(nextSession);
       });
     } catch (error) {
       updateAuthState(null);
-      await loadNotes(null);
       showAuthError(error);
       authStatus.textContent = '로그인 상태를 확인할 수 없습니다.';
     }
@@ -239,6 +333,7 @@
           password: formData.get('password'),
         });
         if (error) throw error;
+        loginForm.reset();
       } catch (error) {
         showAuthError(error);
       } finally {
@@ -264,8 +359,8 @@
 
     noteForm.addEventListener('submit', async event => {
       event.preventDefault();
-      if (!currentSession?.access_token) {
-        showAuthError(new Error('로그인한 뒤 메모를 저장할 수 있습니다.'));
+      if (!currentSession?.access_token || !deviceApproved) {
+        showAuthError(new Error('로그인하고 이 기기가 승인된 뒤 메모를 저장할 수 있습니다.'));
         return;
       }
       const formData = new FormData(noteForm);
@@ -277,23 +372,14 @@
       noteFormButton.disabled = true;
       authError.hidden = true;
       try {
-        const saveResponse = await fetch(editingId
+        const saveResponse = await signedFetch(editingId
           ? `/api/notes/${encodeURIComponent(editingId)}`
-          : '/api/notes', {
-          method: editingId ? 'PUT' : 'POST',
-          headers: {
-            Authorization: `******,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(payload),
-          cache: 'no-store',
-        });
+          : '/api/notes', { method: editingId ? 'PUT' : 'POST', body: payload });
         if (!saveResponse.ok) {
           throw new Error(await apiErrorMessage(saveResponse, '메모를 저장하지 못했습니다.'));
         }
         resetNoteForm();
-        activeNotesToken = null;
-        await loadNotes(currentSession);
+        await loadNotes();
       } catch (error) {
         showAuthError(error);
       } finally {
@@ -301,6 +387,16 @@
       }
     });
 
+    // 오프라인 안내. 오프라인에서도 저장된 자료를 보여 주지 않는다.
+    const updateOnline = () => { offlineBanner.hidden = navigator.onLine; };
+    window.addEventListener('online', updateOnline);
+    window.addEventListener('offline', updateOnline);
+    updateOnline();
+
+    // 설치형 웹앱: 서비스 워커는 오프라인 안내 화면만 다루고 자료 API는 캐시하지 않는다.
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
   </script>
 </body>
 </html>

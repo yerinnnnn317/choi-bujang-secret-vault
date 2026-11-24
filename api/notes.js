@@ -3,6 +3,7 @@ import config from '../aleph.config.json' with { type: 'json' };
 import { createLoginVerifier } from '../src/verify-login.mjs';
 import { resourceId } from '../src/resources.mjs';
 import { noteContentSha256 } from '../src/note-backup.mjs';
+import { checkDeviceSignature, createDeviceStore } from '../src/device-signature.mjs';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 let verifyLoginAuthorization;
@@ -91,6 +92,9 @@ export default async function handler(request, response) {
   if (!identity) {
     return apiError(response, 401, 'UNAUTHORIZED', '로그인 토큰을 확인할 수 없습니다.');
   }
+  // 11단계: 보호 요청은 승인된 기기의 서명이 있어야 한다(서명 없음·경로/본문 변경·미승인 기기는 403).
+  const deviceCheck = await checkDeviceSignature(request, identity, createDeviceStore(baseUrl, secretKey));
+  if (!deviceCheck.ok) return apiError(response, deviceCheck.status, deviceCheck.error, deviceCheck.message);
 
   const notesUrl = new URL('/rest/v1/training_notes', baseUrl);
   notesUrl.searchParams.set('select', 'id,title,content');

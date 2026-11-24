@@ -1,6 +1,7 @@
 import config from '../aleph.config.json' with { type: 'json' };
 import { createLoginVerifier } from '../src/verify-login.mjs';
 import { resourceId } from '../src/resources.mjs';
+import { checkDeviceSignature, createDeviceStore } from '../src/device-signature.mjs';
 
 // 8단계 반 공지 API: 검증된 로그인 사용자만 읽을 수 있고, 쓰기는 서버에 저장된 강사 권한이 있을 때만 허용한다.
 // 화면 메뉴, 요청 본문의 role, 토큰 안의 임의 값은 강사 권한으로 믿지 않는다.
@@ -38,7 +39,8 @@ export default async function handler(request, response) {
   }
 
   const secretKey = process.env.SUPABASE_SECRET_KEY;
-  if (!secretKey) return apiError(response, 500, 'ANNOUNCEMENTS_UNAVAILABLE');
+  const supabaseUrl = process.env.SUPABASE_URL;
+  if (!secretKey || !supabaseUrl || !URL.canParse(supabaseUrl)) return apiError(response, 500, 'ANNOUNCEMENTS_UNAVAILABLE');
   const deploymentHost = process.env.VERCEL_URL;
   const verifierConfig = deploymentHost
     ? { ...config, publicAppUrl: `https://${deploymentHost}/` }
@@ -62,6 +64,9 @@ export default async function handler(request, response) {
   if (!identity) {
     return apiError(response, 401, 'UNAUTHORIZED', '로그인 토큰을 확인할 수 없습니다.');
   }
+  // 11단계: 보호 요청은 승인된 기기의 서명이 있어야 한다(서명 없음·경로/본문 변경·미승인 기기는 403).
+  const deviceCheck = await checkDeviceSignature(request, identity, createDeviceStore(new URL(supabaseUrl), secretKey));
+  if (!deviceCheck.ok) return apiError(response, deviceCheck.status, deviceCheck.error, deviceCheck.message);
 
   if (request.method === 'GET') {
     // 공지 저장소가 아직 없으므로 읽을 공지가 없다.

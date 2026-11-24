@@ -60,6 +60,15 @@ export async function runAttackChecks(config) {
     signal: AbortSignal.timeout(10000),
   });
   const restoreDenied = await isJsonAuthDenial(restoreResponse);
+  // 11단계: 로그인하지 않은 기기 승인 요청은 기기를 등록하지 못해야 한다.
+  const deviceApproveResponse = await fetch(new URL('/api/device/approve', app), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ publicKeyJwk: null, signedAt: '0', signature: 'invalid' }),
+    redirect: 'error',
+    signal: AbortSignal.timeout(10000),
+  });
+  const deviceApproveDenied = await isJsonAuthDenial(deviceApproveResponse);
   return [
     {
       attackId: 'anonymous_note_read',
@@ -88,6 +97,13 @@ export async function runAttackChecks(config) {
       observed: restoreDenied
         ? `${localCheck ? '로컬 ' : ''}비로그인 복원 요청이 JSON으로 거부됨 (HTTP ${restoreResponse.status})`
         : `${localCheck ? '로컬 ' : ''}비로그인 복원 요청이 JSON 401/403으로 거부되지 않음 (HTTP ${restoreResponse.status})`,
+    },
+    {
+      attackId: 'anonymous_device_approve',
+      expected: '토큰 없는 POST /api/device/approve 요청은 JSON 401 또는 403이어야 함',
+      observed: deviceApproveDenied
+        ? `${localCheck ? '로컬 ' : ''}비로그인 기기 승인 요청이 JSON으로 거부됨 (HTTP ${deviceApproveResponse.status})`
+        : `${localCheck ? '로컬 ' : ''}비로그인 기기 승인 요청이 JSON 401/403으로 거부되지 않음 (HTTP ${deviceApproveResponse.status})`,
     },
   ];
 }
