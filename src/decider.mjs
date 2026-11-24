@@ -112,6 +112,8 @@ const BULK_READ_THRESHOLD = 10;
 // 읽기 계열(read·download·export·list·view·fetch·get)만 센다. 수정·삭제 계열은 읽기로 세지 않는다.
 function isReadKind(kind) {
   if (typeof kind !== 'string') return false;
+  // 심판은 복합 이상 사건의 최근 기록을 kind 'risk_signal'로 보낸다. 이 기록도 다량 읽기 건수에 넣는다.
+  if (kind === 'risk_signal') return true;
   const k = kind.toLowerCase();
   return /read|download|export|list|view|fetch|get/u.test(k)
     && !/write|update|delete|modif|create|edit|insert|put|post|patch/u.test(k);
