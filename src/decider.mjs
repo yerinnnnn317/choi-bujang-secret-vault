@@ -118,6 +118,17 @@ function hasSuddenBulkRead(recentEvents) {
   return total > BULK_READ_THRESHOLD;
 }
 
+// 재인증 시각(authAgeSeconds)이 가장 최근 의심 읽기 사건보다 같거나 최근이어야 새 로그인 뒤 요청으로 본다.
+function hasFreshStepUp(request) {
+  const stepUp = request.stepUp;
+  if (!stepUp || stepUp.verified !== true || !Number.isInteger(stepUp.authAgeSeconds)) return false;
+  const readAges = request.recentEvents
+    .filter(event => event && isReadKind(event.kind) && event.ageSeconds <= BULK_READ_WINDOW_SECONDS)
+    .map(event => event.ageSeconds);
+  if (readAges.length === 0) return false;
+  return stepUp.authAgeSeconds <= Math.min(...readAges);
+}
+
 function isValidRequest(request) {
   if (!hasExactKeys(request, REQUEST_KEYS)) {
     return false;
@@ -139,7 +150,8 @@ function isValidRequest(request) {
 
 export async function decide(request) {
   if (request && request.deviceRegistered === true && isValidRequest(request) && hasRiskyAccessPattern(request)) {
-    if (request.stepUp && request.stepUp.verified === true) {
+    // verified 값만 보고 건너뛰지 않는다. 의심스러운 다량 읽기 이후에 다시 인증한 경우에만 허용한다.
+    if (hasFreshStepUp(request)) {
       return {
         schema: 'aleph.decision.v1',
         requestId: request.requestId,
