@@ -69,6 +69,12 @@ export async function runAttackChecks(config) {
     signal: AbortSignal.timeout(10000),
   });
   const deviceApproveDenied = await isJsonAuthDenial(deviceApproveResponse);
+  // 12단계: 로그인하지 않은 작전실 요약 요청은 서버 기록을 읽지 못해야 한다.
+  const opsResponse = await fetch(new URL('/api/ops/summary', app), {
+    redirect: 'error',
+    signal: AbortSignal.timeout(10000),
+  });
+  const opsDenied = await isJsonAuthDenial(opsResponse);
   return [
     {
       attackId: 'anonymous_note_read',
@@ -104,6 +110,13 @@ export async function runAttackChecks(config) {
       observed: deviceApproveDenied
         ? `${localCheck ? '로컬 ' : ''}비로그인 기기 승인 요청이 JSON으로 거부됨 (HTTP ${deviceApproveResponse.status})`
         : `${localCheck ? '로컬 ' : ''}비로그인 기기 승인 요청이 JSON 401/403으로 거부되지 않음 (HTTP ${deviceApproveResponse.status})`,
+    },
+    {
+      attackId: 'anonymous_ops_summary',
+      expected: '토큰 없는 GET /api/ops/summary 요청은 JSON 401 또는 403이어야 함',
+      observed: opsDenied
+        ? `${localCheck ? '로컬 ' : ''}비로그인 작전실 요약 요청이 JSON으로 거부됨 (HTTP ${opsResponse.status})`
+        : `${localCheck ? '로컬 ' : ''}비로그인 작전실 요약 요청이 JSON 401/403으로 거부되지 않음 (HTTP ${opsResponse.status})`,
     },
   ];
 }

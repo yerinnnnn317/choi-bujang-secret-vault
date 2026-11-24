@@ -32,6 +32,12 @@
     .device-panel { border-color: #8ad8df; }
     .device-state { font-weight: 700; color: #ffe3a8; }
     .device-state.ok { color: #9cf0c0; }
+    .ops dl { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; margin: 10px 0; }
+    .ops dt { color: #8ad8df; }
+    .ops dd { margin: 0; color: #ecf4ff; overflow-wrap: anywhere; }
+    .ops h3 { margin: 18px 0 6px; font-size: 17px; }
+    .ops .tag { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 13px; border: 1px solid #71869d; }
+    .ops small { color: #9fb2c8; }
     #offline-banner { margin: 0 0 18px; padding: 12px 16px; border: 1px solid #d0a873; border-radius: 12px; color: #ffe9c7; background: #5a442433; }
   </style>
   <link rel="manifest" href="/manifest.webmanifest">
@@ -82,6 +88,12 @@
       </form>
     </section>
     <ul id="notes" aria-live="polite"><li>로그인하고 이 기기가 승인되면 가상 자료를 표시합니다.</li></ul>
+    <section id="ops-panel" class="auth-panel ops" aria-labelledby="ops-heading" hidden>
+      <h2 id="ops-heading">탈환 작전실</h2>
+      <p>서명한 <code>GET /api/ops/summary</code> 응답을 그대로 보여 줍니다. 「실제 확인」은 서버 기록에서 읽은 값이고, 「미실행」·「읽지 못함」은 통과 근거가 아닙니다. 이 화면의 문구는 심판 통과 증거가 아닙니다. 메모 본문은 표시하지 않고 ID는 앞 8자리만 보입니다.</p>
+      <button id="ops-refresh" type="button">작전실 새로고침</button>
+      <div id="ops-body" aria-live="polite"><p>아직 불러오지 않았습니다.</p></div>
+    </section>
   </main>
   <script type="module">
     import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.117.2?bundle';
@@ -105,6 +117,9 @@
     const deviceStatus = document.querySelector('#device-status');
     const deviceApprove = document.querySelector('#device-approve');
     const offlineBanner = document.querySelector('#offline-banner');
+    const opsPanel = document.querySelector('#ops-panel');
+    const opsBody = document.querySelector('#ops-body');
+    const opsRefresh = document.querySelector('#ops-refresh');
     let currentSession = null;
     let editingNoteId = null;
     // 기기 키: 이번 접속의 메모리에만 있다. 개인키는 꺼낼 수 없게(extractable: false) 만든다.
@@ -169,6 +184,8 @@
       deviceStatus.classList.toggle('ok', approved);
       // 서버가 등록 기기로 확인한 뒤에만 자료실(편집기·목록)을 연다.
       noteEditor.hidden = !(currentSession && approved);
+      opsPanel.hidden = !(currentSession && approved);
+      if (!approved) opsBody.replaceChildren(textEl('p', '아직 불러오지 않았습니다.'));
       deviceApprove.hidden = approved;
       if (!approved) {
         resetNoteForm();
@@ -232,6 +249,7 @@
         }
         setDeviceState(true, `서버가 이 기기(${status.deviceId})를 승인된 기기로 확인했습니다.`);
         await loadNotes();
+        await loadOps();
       } catch (error) {
         setDeviceState(false, '이 기기는 승인되지 않았습니다. 승인 전에는 자료를 표시하지 않습니다.');
         showAuthError(error);
@@ -239,6 +257,74 @@
         deviceApprove.disabled = false;
       }
     });
+
+    // 12단계 탈환 작전실: 실제 API 응답에서 확인한 값과 미실행을 구분해 표시한다(본문 없음, 모든 글자는 textContent).
+    function textEl(tag, text) {
+      const el = document.createElement(tag);
+      el.textContent = text;
+      return el;
+    }
+    const STATUS_TEXT = { confirmed: '실제 확인', unavailable: '읽지 못함', not_run: '미실행' };
+    function heading(title, status) {
+      const h = textEl('h3', title);
+      const tag = textEl('span', STATUS_TEXT[status] ?? status);
+      tag.className = 'tag';
+      h.append(tag);
+      return h;
+    }
+    function pairs(entries) {
+      const dl = document.createElement('dl');
+      for (const [k, v] of entries) dl.append(textEl('dt', k), textEl('dd', String(v)));
+      return dl;
+    }
+    function recordList(records, format) {
+      const ul = document.createElement('ul');
+      if (!records?.length) ul.append(textEl('li', '기록 없음'));
+      for (const r of records ?? []) ul.append(textEl('li', format(r)));
+      return ul;
+    }
+    function renderOps(data) {
+      const parts = [pairs([['요청 ID', data.requestId], ['확인 시각', data.checkedAt], ['이 기기', data.viewer.deviceId]])];
+      parts.push(heading('판정기 규칙', data.decider.status), pairs([
+        ['단계', data.decider.step], ['규칙', data.decider.ruleIds.join(', ')],
+        ['허용 경로', data.decider.allowedRoutes.join(' · ')], ['출처', data.decider.source]]));
+      parts.push(heading('탐지 사건', data.detection.status), pairs([['규칙', data.detection.rule], ['사유', data.detection.reason]]));
+      const dev = data.revocation.devices;
+      parts.push(heading('회수 상태 · 내 기기', dev.status));
+      if (dev.status === 'confirmed') {
+        parts.push(pairs([['승인', `${dev.approved}대`], ['회수', `${dev.revoked}대`]]),
+          recordList(dev.records, r => `${r.deviceId} · ${r.status} · ${r.at}`));
+      } else parts.push(textEl('p', dev.reason));
+      parts.push(heading('탐지에 따른 회수', data.revocation.detectionRevocation.status),
+        textEl('p', data.revocation.detectionRevocation.reason));
+      const pol = data.recovery.policy;
+      parts.push(heading('복구 버전 · 안전 정책', pol.status), pairs([['버전', pol.version], ['출처', pol.source]]),
+        recordList(pol.files, f => `${f.name} · sha256 ${f.sha256}`));
+      const bk = data.recovery.noteBackups;
+      parts.push(heading('복구 · 내 메모 사본', bk.status));
+      if (bk.status === 'confirmed') parts.push(pairs([['사본', `${bk.count}건`]]), recordList(bk.records, r => `${r.noteId} · ${r.at}`));
+      else parts.push(textEl('p', bk.reason));
+      const ra = data.recovery.restoreAudit;
+      parts.push(heading('복구 · 복원 감사 기록(최근 20건)', ra.status));
+      if (ra.status === 'confirmed') parts.push(pairs([['복원', `${ra.restored}건`], ['거부·실패', `${ra.refused}건`]]),
+        recordList(ra.records, r => `${r.noteId} · ${r.result} · ${r.at}`));
+      else parts.push(textEl('p', ra.reason));
+      opsBody.replaceChildren(...parts);
+    }
+    async function loadOps() {
+      if (!deviceApproved) return;
+      opsRefresh.disabled = true;
+      try {
+        const response = await signedFetch('/api/ops/summary');
+        if (!response.ok) throw new Error(await apiErrorMessage(response, '작전실 요약을 불러오지 못했습니다.'));
+        renderOps(await response.json());
+      } catch (error) {
+        opsBody.replaceChildren(textEl('p', error.message));
+      } finally {
+        opsRefresh.disabled = false;
+      }
+    }
+    opsRefresh.addEventListener('click', loadOps);
 
     async function loadNotes() {
       if (!currentSession?.access_token || !deviceApproved) return;

@@ -15,6 +15,7 @@
     "policy:diff": "node scripts/policy-backup.mjs diff",
     "policy:restore": "node scripts/policy-backup.mjs restore",
     "policy:check": "node scripts/policy-backup.mjs check",
+    "regression": "node scripts/regression-table.mjs",
     "xdr:run": "node scripts/xdr-run.mjs"
   },
   "engines": {

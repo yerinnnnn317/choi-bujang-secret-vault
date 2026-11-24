@@ -1,6 +1,42 @@
-# BYTE BACK 방어전 2~11단계
+# BYTE BACK 방어전 2~12단계
 
 1단계에서 공개했던 네 건의 메모는 모두 가상 자료입니다. 2단계에서는 Supabase 학습 테이블로 옮겼고, 3단계에서는 Auth 로그인과 메모 CRUD를, 4단계에서는 단건 메모 소유자 검사를 연결했습니다. 5단계 저장점에서는 배포 URL과 원본 API 주소를 함께 기록하고, 인증된 사용자별 자료 보안 검증을 유지합니다. 실제 학생 자료, 토큰, 비밀키를 넣지 마세요.
+
+## 12단계 저장점
+
+**탈환 작전실(만들기 1).** 로그인하고 기기 승인을 받은 화면 아래에 「탈환 작전실」이 열립니다. 화면은 승인된 기기로 서명한 `GET /api/ops/summary` 응답만 그대로 보여 줍니다. 판정기 규칙(배포된 `RULE_IDS`·`allowedRoutes`), 탐지 사건, 회수 상태(내 기기의 승인·회수 수와 가린 기록), 복구 버전(안전 정책 사본 버전·해시 앞자리, 내 메모 사본 수, 복원 감사 기록)을 보여 주며, 각 항목에 「실제 확인」(서버 기록에서 읽음)·「읽지 못함」·「미실행」을 붙입니다. 수치는 같은 응답에 담긴 가린 기록에서 세므로 화면 수치와 기록이 일치합니다. 로그인한 본인 기록만 읽고, ID는 앞 8자리만 보이며, 메모 본문은 돌려주지 않습니다. 실제 탐지 사건과 탐지에 따른 회수는 반 엔진 사건 전달이 연결되지 않아 「미실행」으로 표시합니다. 화면 문구는 통과 근거가 아닙니다.
+
+**정상·금지 요청 실측표(만들기 2).** `npm run regression`은 1~11단계의 정상·금지 요청을 실제로 실행해 `reports/regression-table.md`에 단계·구분·요청·실행 위치·기대 결과·실제 결과·요청 ID·확인 시각·판정을 한 표로 남깁니다. 로컬 판정기·탐지기·안전 정책 사본은 직접 실행하고(요청 ID는 판정 요청 ID), 배포 주소에는 실제 HTTP 요청을 보내 상태 코드와 Vercel 요청 ID(`x-vercel-id`)를 적습니다. 시험 계정 토큰·승인 기기 키가 필요한 요청(B의 A 메모 접근, 서명 없는 보호 요청, 서명 뒤 경로·본문 변경, 복원 정상)과 심판의 41종 공격은 「미실행」으로 남기며 통과로 세지 않습니다. 기대와 다른 실행 결과가 하나라도 있으면 명령이 실패 코드로 끝납니다.
+
+### 설치·실행·중지·복구 안내 (만들기 3)
+
+이 안내는 이 README가 들어 있는 「12단계 저장점」 커밋을 기준으로 합니다(정확한 커밋 번호는 `npm run bundle`이 만든 제출 묶음에 기록됩니다).
+
+**출처 구분**
+- 제공(ALEPH): **ALEPH SDP 엔진**(반 엔진 — 실제 릴레이, 기기 등록 정보(`deviceRegistered`) 전달, 검증한 사건 전달, 심판 시험 토큰 발급)과 시작 틀(`src/verify-login.mjs`, `scripts/bundle.mjs`·`build-public.mjs`·`decider-test.mjs`·`detect-test.mjs`·`fixture-7.mjs`, `docs/DECIDER_REQUEST.md`·`DETECT_EVENTS.md`, `supabase/step-2-training-notes.sql`의 표 뼈대). 이 저장소는 엔진을 포함하지 않습니다.
+- 학생 작업: 판정기 규칙 `src/decider.mjs`(6단계 기기 등록, 7단계 복합 이상 추가 확인, 8단계 구역), 탐지 규칙 `src/detect.mjs`(9단계 `burst_read`), 안전 정책 사본·복원 `scripts/policy-backup.mjs`·`backup/`(10단계), 메모 복원 `api/restore/notes/[id].js`·`src/note-backup.mjs`(10단계), 자료실 API `api/notes.js`·`api/announcements.js`·`src/resources.mjs`, 접속 앱 `public/`·`api/device/*`·`src/device-signature.mjs`·`src/server-auth.mjs`(11단계), 작전실 `api/ops/summary.js`·`scripts/regression-table.mjs`(12단계), 자기 점검 `src/attack-check.mjs`.
+
+**설치(처음 받는 사람 기준)**
+1. Node.js 22 이상에서 저장소를 받고 `npm install`을 실행합니다.
+2. Supabase 프로젝트를 만들고 SQL Editor에서 `supabase/step-2-training-notes.sql` → `supabase/step-10-note-backup.sql` → `supabase/step-11-devices.sql` 순서로 한 번씩 실행합니다.
+3. Vercel에 새 프로젝트로 연결하고 환경변수 이름 `SUPABASE_URL`, `SUPABASE_SECRET_KEY`를 Vercel 비밀 입력란에만 넣습니다(값은 저장소·README·캡처에 쓰지 않음). 화면의 Supabase 주소·공개 키는 `public/index.html`에 있습니다.
+4. `aleph.config.json`의 `publicAppUrl`·`repoUrl`을 새 배포 주소·저장소로 바꾼 뒤 배포합니다.
+
+**실행**
+- 접속 앱: 배포 주소를 열고(설치형 앱으로 설치 가능) 로그인 → 「이 기기 승인 요청」 → 승인 표시 뒤 자료실·작전실이 열립니다. 새로고침하면 다시 로그인·승인합니다.
+- 판정기·탐지 규칙 로컬 확인: `npm run decider:test`, `npm run fixture:7`, `npm run detect:test`.
+- 전체 실측표: `npm run regression`(배포 주소 대상).
+
+**중지**
+- 접속 앱·자료실: Vercel 프로젝트에서 배포를 중지(Pause)하거나 도메인을 끕니다. 서버 비밀키 환경변수를 지우면 자료 API는 `500`으로 멈춥니다.
+- 특정 기기: Supabase SQL Editor에서 `update public.device_approvals set status = 'revoked' where device_id = '<기기 ID>';`로 회수합니다. 회수된 기기는 다시 승인되지 않습니다.
+- 데이터베이스 전체: Supabase 프로젝트를 일시 정지합니다(정지 중에는 자료 API가 동작하지 않음).
+
+**복구**
+- 안전 정책: `npm run policy:diff`로 복원할 버전과 차이를 보고 `npm run policy:restore -- --yes`로 시험 정책을 되돌린 뒤 `npm run policy:check`로 확인합니다.
+- 메모 한 건: 소유자가 `POST /api/restore/notes/:id`(로그인·승인 기기 서명 필요)를 호출합니다.
+- 배포: Vercel에서 이전 정상 배포를 다시 올리거나(Promote), 문제가 된 커밋을 `git revert`로 되돌립니다(`reset --hard`는 쓰지 않음).
+- 복구 뒤 `npm run regression`으로 정상·금지 요청을 다시 실측합니다.
 
 ## 11단계 저장점
 
