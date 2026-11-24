@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import config from '../aleph.config.json' with { type: 'json' };
 import { createLoginVerifier } from '../src/verify-login.mjs';
+import { resourceId } from '../src/resources.mjs';
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu;
 let verifyLoginAuthorization;
@@ -176,7 +177,9 @@ export default async function handler(request, response) {
   if (!result.ok) {
     return apiError(response, 502, 'NOTES_UNAVAILABLE');
   }
-  if (request.method === 'POST') return response.status(201).json({ id: body.id });
+  if (request.method === 'POST') {
+    return response.status(201).json({ id: body.id, resourceId: resourceId('note', body.id) });
+  }
 
   let rows;
   try {
@@ -192,7 +195,7 @@ export default async function handler(request, response) {
       return apiError(response, 502, 'NOTES_UNAVAILABLE');
     }
     return response.status(200).json(rows.map(({ id: noteId, title, content }) => ({
-      id: noteId, title, body: content,
+      id: noteId, resourceId: resourceId('note', noteId), title, body: content,
     })));
   }
   if (!rows.length) return apiError(response, 404, 'NOT_FOUND');
@@ -202,8 +205,10 @@ export default async function handler(request, response) {
     if (typeof row.title !== 'string' || typeof row.content !== 'string') {
       return apiError(response, 502, 'NOTES_UNAVAILABLE');
     }
-    return response.status(200).json({ id: row.id, title: row.title, body: row.content });
+    return response.status(200).json({
+      id: row.id, resourceId: resourceId('note', row.id), title: row.title, body: row.content,
+    });
   }
-  if (request.method === 'PUT') return response.status(200).json({ id });
+  if (request.method === 'PUT') return response.status(200).json({ id, resourceId: resourceId('note', id) });
   return response.status(204).end();
 }

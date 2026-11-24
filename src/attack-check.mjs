@@ -44,6 +44,15 @@ export async function runAttackChecks(config) {
   };
   const anonymousDenied = await isJsonAuthDenial(anonymousResponse);
   const fakeTokenDenied = await isJsonAuthDenial(fakeTokenResponse);
+  // 8단계: 로그인하지 않은 공지 수정 요청이 다른 구역(반 공지) 쓰기로 이어지지 않는지 실제로 보낸다.
+  const announcementWriteResponse = await fetch(new URL('/api/announcements/sample-announcement', app), {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ title: 'SAMPLE', role: 'instructor' }),
+    redirect: 'error',
+    signal: AbortSignal.timeout(10000),
+  });
+  const announcementWriteDenied = await isJsonAuthDenial(announcementWriteResponse);
   return [
     {
       attackId: 'anonymous_note_read',
@@ -58,6 +67,13 @@ export async function runAttackChecks(config) {
       observed: fakeTokenDenied
         ? `${localCheck ? '로컬 ' : ''}위조 토큰 목록 요청이 JSON으로 거부됨 (HTTP ${fakeTokenResponse.status})`
         : `${localCheck ? '로컬 ' : ''}위조 토큰 목록 요청이 JSON 401/403으로 거부되지 않음 (HTTP ${fakeTokenResponse.status})`,
+    },
+    {
+      attackId: 'anonymous_announcement_write',
+      expected: '토큰 없이 role을 붙인 PUT /api/announcements/:id 요청은 JSON 401 또는 403이어야 함',
+      observed: announcementWriteDenied
+        ? `${localCheck ? '로컬 ' : ''}비로그인 공지 수정 요청이 JSON으로 거부됨 (HTTP ${announcementWriteResponse.status})`
+        : `${localCheck ? '로컬 ' : ''}비로그인 공지 수정 요청이 JSON 401/403으로 거부되지 않음 (HTTP ${announcementWriteResponse.status})`,
     },
   ];
 }

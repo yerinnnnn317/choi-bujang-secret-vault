@@ -1,7 +1,9 @@
 // ALEPH SDP 엔진이 확인한 요청만 받는 학생 판정기 시작점입니다.
 // 6단계부터 등록된 기기만 자료실에 들어갈 수 있도록 규칙을 추가합니다.
 // 요청 본문의 userId, role, 기기 키, 토큰을 별도로 믿거나 저장하지 마세요.
-export const RULE_IDS = Object.freeze(['device_registered', 'step_up_required']);
+import { RESOURCE_ZONES } from './resources.mjs';
+
+export const RULE_IDS = Object.freeze(['device_registered', 'step_up_required', 'resource_zone']);
 
 const REQUEST_KEYS = Object.freeze([
   'schema', 'requestId', 'classId', 'projectId', 'subjectId', 'deviceId',
@@ -137,6 +139,42 @@ function hasFreshStepUp(request) {
   return stepUp.authAgeSeconds <= Math.min(...readAges);
 }
 
+// 8단계 구역 규칙: 서비스·메서드·정확한 경로 모양이 모두 맞는 요청만 통과시킨다. 표에 없는 경로는 거부한다.
+// - 메모: 자료 ID 하나를 고르는 경로만 허용한다. ID 없는 전체 목록·생성 경로는 거부한다. 주인 비교는 자료 API에서 한다.
+// - 반 공지: 읽기(GET)만 허용한다. 쓰기(POST·PUT·PATCH·DELETE)는 누구에게나 거부한다. 강사의 공지 수정은 서버 관리 경로에서 처리한다.
+// - 강사 자료: 판정기에서 모두 거부한다(표에 넣지 않음).
+// - 쿼리로 기능을 고르지 않는다: 쿼리가 붙은 요청은 거부한다. ID 형식은 좁히지 않는다.
+const ZONE_ROUTES = Object.freeze([
+  { service: RESOURCE_ZONES.note.service, route: 'GET /notes/:id' },
+  { service: RESOURCE_ZONES.note.service, route: 'PUT /notes/:id' },
+  { service: RESOURCE_ZONES.note.service, route: 'DELETE /notes/:id' },
+  { service: RESOURCE_ZONES.announcement.service, route: 'GET /announcements' },
+  { service: RESOURCE_ZONES.announcement.service, route: 'GET /announcements/:id' },
+]);
+
+function pathMatchesShape(path, shape) {
+  if (typeof path !== 'string' || !path.startsWith('/') || /[?#]/u.test(path)) return false;
+  const actual = path.split('/');
+  const expected = shape.split('/');
+  if (actual.length !== expected.length) return false;
+  return expected.every((part, index) => (part === ':id'
+    ? actual[index].length > 0
+    : actual[index] === part));
+}
+
+function isAllowedZoneRoute(request) {
+  if (request.queryLength !== 0) return false;
+  return ZONE_ROUTES.some(({ service, route }) => {
+    const space = route.indexOf(' ');
+    const method = route.slice(0, space);
+    const shape = route.slice(space + 1);
+    return request.service === service
+      && request.method === method
+      && request.route === route
+      && pathMatchesShape(request.path, shape);
+  });
+}
+
 function isValidRequest(request) {
   if (!hasExactKeys(request, REQUEST_KEYS)) {
     return false;
@@ -157,6 +195,16 @@ function isValidRequest(request) {
 }
 
 export async function decide(request) {
+  if (request && request.deviceRegistered === true && isValidRequest(request) && !isAllowedZoneRoute(request)) {
+    return {
+      schema: 'aleph.decision.v1',
+      requestId: request.requestId,
+      decision: 'deny',
+      reasonCode: 'route_not_allowed',
+      ruleIds: [RULE_IDS[2]],
+    };
+  }
+
   if (request && request.deviceRegistered === true && isValidRequest(request) && hasRiskyAccessPattern(request)) {
     // verified 값만 보고 건너뛰지 않는다. 의심스러운 다량 읽기 이후에 다시 인증한 경우에만 허용한다.
     if (hasFreshStepUp(request)) {
@@ -165,7 +213,7 @@ export async function decide(request) {
         requestId: request.requestId,
         decision: 'allow',
         reasonCode: 'approved',
-        ruleIds: [RULE_IDS[0]],
+        ruleIds: [RULE_IDS[0], RULE_IDS[2]],
       };
     }
 
@@ -184,7 +232,7 @@ export async function decide(request) {
       requestId: request.requestId,
       decision: 'allow',
       reasonCode: 'approved',
-      ruleIds: [RULE_IDS[0]],
+      ruleIds: [RULE_IDS[0], RULE_IDS[2]],
     };
   }
 
