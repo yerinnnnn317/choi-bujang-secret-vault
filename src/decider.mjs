@@ -85,17 +85,37 @@ function hasRiskyAccessPattern(request) {
     return false;
   }
 
-  const network = signals.network;
-  const hour = signals.hour;
-  const recentEvents = request.recentEvents;
-  const bulkReadEvent = recentEvents.some((event) => {
-    return event && typeof event === 'object' && event.kind === 'bulk_read'
-      && event.ageSeconds <= 120
-      && event.count > 10;
-  });
+  // 세 신호가 모두 함께일 때만 추가 확인한다. 지역(region)은 근거로 쓰지 않는다.
+  return isUnusualHour(signals.hour)
+    && isUnfamiliarNetwork(signals.network)
+    && hasSuddenBulkRead(request.recentEvents);
+}
 
-  const oddWindow = Number.isInteger(hour) && (hour < 4 || hour > 21);
-  return network === 'first_seen' && oddWindow && bulkReadEvent;
+// 평소와 다른 시각: 업무 시간대(06~21시)를 벗어난 새벽·심야
+const UNUSUAL_HOUR_START = 22;
+const UNUSUAL_HOUR_END = 6;
+function isUnusualHour(hour) {
+  return Number.isInteger(hour) && (hour >= UNUSUAL_HOUR_START || hour < UNUSUAL_HOUR_END);
+}
+
+// 처음 보는 네트워크: 엔진이 익숙하다고 표시한 값이 아니면 낯선 네트워크로 본다.
+const FAMILIAR_NETWORKS = new Set(['usual', 'known', 'familiar', 'trusted', 'registered']);
+function isUnfamiliarNetwork(network) {
+  return typeof network === 'string' && network.length > 0 && !FAMILIAR_NETWORKS.has(network);
+}
+
+// 갑작스러운 다량 읽기: 최근 5분 안의 읽기 사건 건수를 합쳐 10건을 넘으면 다량 읽기로 본다.
+const BULK_READ_WINDOW_SECONDS = 300;
+const BULK_READ_THRESHOLD = 10;
+function isReadKind(kind) {
+  return typeof kind === 'string' && /(^|_)read(_|$)|^read/u.test(kind);
+}
+function hasSuddenBulkRead(recentEvents) {
+  if (!Array.isArray(recentEvents)) return false;
+  const total = recentEvents
+    .filter(event => event && isReadKind(event.kind) && event.ageSeconds <= BULK_READ_WINDOW_SECONDS)
+    .reduce((sum, event) => sum + event.count, 0);
+  return total > BULK_READ_THRESHOLD;
 }
 
 function isValidRequest(request) {
