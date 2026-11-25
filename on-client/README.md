@@ -25,3 +25,13 @@ npm start도 같은 서버를 켭니다. 기본 실행은 실제 회사 시스�
 - 오류 코드별 해결: docs/CONNECTION_TROUBLESHOOT.md
 - 시작 틀 업데이트(내 파일 보존): docs/STARTER_UPDATE.md
 - 실제 회사 시스템(SDP)·앱 안 AI 연결은 담당자가 따로 안내할 때만 씁니다: docs/SDP_HOST_CONNECTION.md, docs/AI_SETUP_GUIDE.md. 이 연결은 앱을 처음 켜고 13~16단계 화면을 만들거나 공식 AI 코드 판정을 받기 위한 전제 조건은 아닙니다. 다만 17단계 이후의 실제 연결과 새 환경 재현은 해당 단계의 기준에 따라 따로 확인합니다.
+
+## 학생 작성 부분 (21단계, 정예린)
+
+이 절부터 아래는 학생이 추가했습니다. 위의 제공 안내는 그대로 두었습니다. 자세한 실행 설명서와 구성도는 [docs/STUDENT_RUNBOOK.md](docs/STUDENT_RUNBOOK.md)에 있습니다.
+
+- **목적:** 회사 직원 본인의 로그인·기기·세션 상태, 업무 앱 접근 판정, 최근 접속 기록·XDR 경보, 근거에 연결된 AI 설명, 조치 상태, 설치 패키지 취약점 조회 결과를 한 화면에서 보여 주는 보안 Agent 앱 「케셰브」.
+- **기능(학생 작성, `student/extension.mjs`):** `renderIdentity`(13), `renderDecision`(14), `renderEvents`(15), `renderStatus`(16), `renderAiConnection`(17), `renderExplanation`(18), `renderAction`(19), `renderVulnerabilities`(20).
+- **구성:** 브라우저(`public/`) → 로컬 앱 서버(`src/server.mjs`, 127.0.0.1:5189) → 접근 제어·XDR 시스템(SDP, `src/engine*`, 기본은 연결 없음) / AI 게이트웨이(CLCO, `src/ai/`) / 조치 처리(`src/actions/`) / OSV(`src/vulnerabilities/`). 제공 화면이 서버 응답을 학생 함수에 넘기고, 학생 함수는 요청을 보내지 않고 화면 조각만 만듭니다.
+- **지원 환경과 버전:** Windows + PowerShell, Node.js 22~24(기준 24.19.0, `package.json`의 `engines`), 외부 npm 의존성 없음. 앱 폴더 `on-client`에서 `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\start-alekov.ps1` 실행 후 `http://127.0.0.1:5189/`. 종료는 `Ctrl+C`.
+- **확인 범위:** 실제 SDP 연결, 실제 AI 설명 응답, 실제 조치 집행, 실제 OSV 조회, 새 폴더 재현은 아직 확인하지 않았습니다(미확인). 18~20단계 함수는 가짜 입력으로만 점검했습니다.
