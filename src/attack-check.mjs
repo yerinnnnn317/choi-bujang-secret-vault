@@ -44,31 +44,9 @@ export async function runAttackChecks(config) {
   };
   const anonymousDenied = await isJsonAuthDenial(anonymousResponse);
   const fakeTokenDenied = await isJsonAuthDenial(fakeTokenResponse);
-  // 8단계: 로그인하지 않은 공지 수정 요청이 다른 구역(반 공지) 쓰기로 이어지지 않는지 실제로 보낸다.
-  const announcementWriteResponse = await fetch(new URL('/api/announcements/sample-announcement', app), {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title: 'SAMPLE', role: 'instructor' }),
-    redirect: 'error',
-    signal: AbortSignal.timeout(10000),
-  });
-  const announcementWriteDenied = await isJsonAuthDenial(announcementWriteResponse);
-  // 10단계: 로그인하지 않은 복원 요청은 어떤 메모도 되돌리지 못해야 한다(대상 ID는 README의 가상 메모).
-  const restoreResponse = await fetch(new URL('/api/restore/notes/20000000-0000-4000-8000-0000000000b1', app), {
-    method: 'POST',
-    redirect: 'error',
-    signal: AbortSignal.timeout(10000),
-  });
-  const restoreDenied = await isJsonAuthDenial(restoreResponse);
-  // 11단계: 로그인하지 않은 기기 승인 요청은 기기를 등록하지 못해야 한다.
-  const deviceApproveResponse = await fetch(new URL('/api/device/approve', app), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ publicKeyJwk: null, signedAt: '0', signature: 'invalid' }),
-    redirect: 'error',
-    signal: AbortSignal.timeout(10000),
-  });
-  const deviceApproveDenied = await isJsonAuthDenial(deviceApproveResponse);
+  // 8·10·11단계의 쓰기 요청(PUT·POST)은 제출 묶음 격리 환경에서 보낼 수 없으므로 보내지 않고 not_run 으로 둔다.
+  // 같은 거부는 배포 서버에서 npm run regression 실측표(reports/regression-table.md)로 확인한다.
+  const NOT_RUN = 'not_run';
   // 12단계: 로그인하지 않은 작전실 요약 요청은 서버 기록을 읽지 못해야 한다.
   const opsResponse = await fetch(new URL('/api/ops/summary', app), {
     redirect: 'error',
@@ -93,23 +71,17 @@ export async function runAttackChecks(config) {
     {
       attackId: 'anonymous_announcement_write',
       expected: '토큰 없이 role을 붙인 PUT /api/announcements/:id 요청은 JSON 401 또는 403이어야 함',
-      observed: announcementWriteDenied
-        ? `${localCheck ? '로컬 ' : ''}비로그인 공지 수정 요청이 JSON으로 거부됨 (HTTP ${announcementWriteResponse.status})`
-        : `${localCheck ? '로컬 ' : ''}비로그인 공지 수정 요청이 JSON 401/403으로 거부되지 않음 (HTTP ${announcementWriteResponse.status})`,
+      observed: NOT_RUN,
     },
     {
       attackId: 'anonymous_note_restore',
       expected: '토큰 없는 POST /api/restore/notes/:id 요청은 JSON 401 또는 403이어야 함',
-      observed: restoreDenied
-        ? `${localCheck ? '로컬 ' : ''}비로그인 복원 요청이 JSON으로 거부됨 (HTTP ${restoreResponse.status})`
-        : `${localCheck ? '로컬 ' : ''}비로그인 복원 요청이 JSON 401/403으로 거부되지 않음 (HTTP ${restoreResponse.status})`,
+      observed: NOT_RUN,
     },
     {
       attackId: 'anonymous_device_approve',
       expected: '토큰 없는 POST /api/device/approve 요청은 JSON 401 또는 403이어야 함',
-      observed: deviceApproveDenied
-        ? `${localCheck ? '로컬 ' : ''}비로그인 기기 승인 요청이 JSON으로 거부됨 (HTTP ${deviceApproveResponse.status})`
-        : `${localCheck ? '로컬 ' : ''}비로그인 기기 승인 요청이 JSON 401/403으로 거부되지 않음 (HTTP ${deviceApproveResponse.status})`,
+      observed: NOT_RUN,
     },
     {
       attackId: 'anonymous_ops_summary',
