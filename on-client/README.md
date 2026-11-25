@@ -34,4 +34,5 @@ npm start도 같은 서버를 켭니다. 기본 실행은 실제 회사 시스�
 - **기능(학생 작성, `student/extension.mjs`):** `renderIdentity`(13), `renderDecision`(14), `renderEvents`(15), `renderStatus`(16), `renderAiConnection`(17), `renderExplanation`(18), `renderAction`(19), `renderVulnerabilities`(20).
 - **구성:** 브라우저(`public/`) → 로컬 앱 서버(`src/server.mjs`, 127.0.0.1:5189) → 접근 제어·XDR 시스템(SDP, `src/engine*`, 기본은 연결 없음) / AI 게이트웨이(CLCO, `src/ai/`) / 조치 처리(`src/actions/`) / OSV(`src/vulnerabilities/`). 제공 화면이 서버 응답을 학생 함수에 넘기고, 학생 함수는 요청을 보내지 않고 화면 조각만 만듭니다.
 - **지원 환경과 버전:** Windows + PowerShell, Node.js 22~24(기준 24.19.0, `package.json`의 `engines`), 외부 npm 의존성 없음. 앱 폴더 `on-client`에서 `powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\start-alekov.ps1` 실행 후 `http://127.0.0.1:5189/`. 종료는 `Ctrl+C`.
-- **확인 범위:** 실제 SDP 연결, 실제 AI 설명 응답, 실제 조치 집행, 실제 OSV 조회, 새 폴더 재현은 아직 확인하지 않았습니다(미확인). 18~20단계 함수는 가짜 입력으로만 점검했습니다.
+- **확인 범위:** 실제 SDP 연결, 실제 AI 설명 응답, 실제 조치 집행, 실제 OSV 조회는 아직 확인하지 않았습니다(미확인). 새 폴더 재현은 서버 시작과 첫 화면까지만 학생이 직접 확인했습니다(22단계 기록). 18~20단계 함수는 가짜 입력으로만 점검했습니다.
+- **릴리스·재현 기록(22단계):** [docs/RELEASE_RECORD.md](docs/RELEASE_RECORD.md). 현재 버전은 검증 중 버전입니다(정식 v1.0 아님).
