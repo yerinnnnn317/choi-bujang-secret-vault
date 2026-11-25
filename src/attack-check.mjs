@@ -24,11 +24,13 @@ export async function runAttackChecks(config) {
   const apiUrl = new URL('/api/notes', app);
   const anonymousResponse = await fetch(apiUrl, {
     redirect: 'error', signal: AbortSignal.timeout(10000),
+    alephEvidence: { caseId: 'anonymous_note_read', requestKey: 'probe' },
   });
   const fakeTokenResponse = await fetch(apiUrl, {
     headers: { Authorization: 'Bearer invalid' },
     redirect: 'error',
     signal: AbortSignal.timeout(10000),
+    alephEvidence: { caseId: 'fake_token_note_read', requestKey: 'probe' },
   });
   const isJsonAuthDenial = async response => {
     if (![401, 403].includes(response.status)
@@ -51,6 +53,7 @@ export async function runAttackChecks(config) {
   const opsResponse = await fetch(new URL('/api/ops/summary', app), {
     redirect: 'error',
     signal: AbortSignal.timeout(10000),
+    alephEvidence: { caseId: 'anonymous_ops_summary', requestKey: 'probe' },
   });
   const opsDenied = await isJsonAuthDenial(opsResponse);
   return [
